@@ -27,9 +27,17 @@ if st.button("Test Login"):
         # Attempt to sign in
         with server_connection.auth.sign_in(tableau_auth):
             st.write("Connected to Tableau Server successfully!")
-            # Optionally, show the server version as confirmation
+
+            # Get the server information
             server_info = server_connection.server_info
-            st.write(f"Connected to Tableau Server version: {server_info.version}")
+            st.write(f"Server Info: {server_info}")
+
+            # If the version is included in the server_info, access it via the json() method or attributes.
+            if hasattr(server_info, 'version'):
+                st.write(f"Tableau Server Version: {server_info.version}")
+            else:
+                # If there's no 'version' directly, attempt to parse from the json()
+                st.write("Unable to retrieve the version directly. Server Info: ", server_info.json())
 
     except TSC.ServerResponseError as e:
         st.error(f"Server response error: {str(e)}")
