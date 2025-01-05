@@ -2,6 +2,8 @@ import streamlit as st
 import requests
 import json
 import pandas as pd
+import os
+import tableauserverclient as TSC
 
 # Title of the Streamlit app
 st.title("Publish or Export Tableau Content to Cloud")
@@ -78,6 +80,9 @@ def login_to_tableau():
         return None
 
 
+# Save token globally to use it later in the app
+token = None
+
 # Button to trigger the login
 if st.button("Login to Tableau"):
     # Check if required fields are provided
@@ -87,43 +92,7 @@ if st.button("Login to Tableau"):
         elif server_type == "Tableau Server" and not server_url:
             st.error("Please enter the Tableau Server URL.")
         else:
-            token = login_to_tableau()
-            
-            if token:
-                # Use the token to get additional info like projects
-                if server_type == "Tableau Online (Cloud)":
-                    # Correct API endpoint for Tableau Online
-                    projects_url = f"{server_url}/api/3.10/sites/{site}/projects"
-                else:
-                    # Tableau Server - Make sure the correct endpoint URL is provided
-                    projects_url = f"{server_url}/api/3.10/sites/{site}/projects"
-                
-                headers = {
-                    "X-Tableau-Auth": token
-                }
-
-                try:
-                    # Make a GET request to fetch projects
-                    projects_response = requests.get(projects_url, headers=headers)
-
-                    if projects_response.status_code == 200:
-                        projects_data = projects_response.json()
-                        if 'projects' in projects_data and 'project' in projects_data['projects']:
-                            projects = projects_data['projects']['project']
-                            if projects:
-                                st.write("List of Projects:")
-                                for project in projects:
-                                    st.write(f"Project Name: {project['name']}")
-                            else:
-                                st.write("No projects found.")
-                        else:
-                            st.write("The response did not contain project data.")
-                    else:
-                        st.error(f"Failed to fetch projects. Status code: {projects_response.status_code}")
-                        st.write(f"Response Text: {projects_response.text}")
-                
-                except requests.exceptions.RequestException as e:
-                    st.error(f"An error occurred while fetching projects: {e}")
+            token = login_to_tableau()  # Save the token globally
     else:
         st.error("Please enter both the PAT Name and PAT Value.")
 
@@ -131,7 +100,7 @@ if st.button("Login to Tableau"):
 mode = st.radio("Choose an option", ("Upload", "Download"))
 
 # Upload functionality
-if mode == "Upload":
+if mode == "Upload" and token:  # Only proceed if logged in and token exists
     st.subheader("Upload Tableau Content to Cloud")
 
     # User input for project details
@@ -201,7 +170,7 @@ if mode == "Upload":
                     st.error(f"An error occurred during the upload: {e}")
 
 # Download functionality
-elif mode == "Download":
+elif mode == "Download" and token:  # Only proceed if logged in and token exists
     st.subheader("Export All Content Names and Owners to CSV")
 
     # Export all content with owner to CSV
