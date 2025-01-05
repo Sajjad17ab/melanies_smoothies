@@ -73,7 +73,7 @@ def login_to_tableau():
             return None
 
     except requests.exceptions.RequestException as e:
-        st.error(f"An error occurred: {e}")
+        st.error(f"An error occurred while trying to authenticate: {e}")
         return None
 
 # Button to trigger the login
@@ -101,18 +101,21 @@ if st.button("Login to Tableau"):
 
                 if projects_response.status_code == 200:
                     projects_data = projects_response.json()
-                    projects = projects_data.get('projects', {}).get('project', [])
-                    if projects:
-                        st.write("List of Projects:")
-                        for project in projects:
-                            st.write(f"Project Name: {project['name']}")
+                    if 'projects' in projects_data and 'project' in projects_data['projects']:
+                        projects = projects_data['projects']['project']
+                        if projects:
+                            st.write("List of Projects:")
+                            for project in projects:
+                                st.write(f"Project Name: {project['name']}")
+                        else:
+                            st.write("No projects found.")
                     else:
-                        st.write("No projects found.")
+                        st.write("The response did not contain project data.")
                 else:
                     st.error(f"Failed to fetch projects. Status code: {projects_response.status_code}")
                     st.write(f"Response Text: {projects_response.text}")
             
             except requests.exceptions.RequestException as e:
-                st.error(f"An error occurred: {e}")
+                st.error(f"An error occurred while fetching projects: {e}")
     else:
         st.error("Please enter both the PAT Name and PAT Value.")
