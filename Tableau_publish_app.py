@@ -51,18 +51,18 @@ if mode == "Upload":
                         if not username or not password:
                             st.error("Please provide both username and password.")
                         else:
-                            tableau_auth = TSC.TableauAuth(username, password, site=site)
+                            tableau_auth = TSC.TableauAuth(username, password)
                     else:
                         if not token_name or not token_value:
                             st.error("Please provide both token name and token value.")
                         else:
-                            tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site=site)
+                            tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value)
 
                     # Create server object and authenticate
                     server = TSC.Server(server_url, use_server_version=True)
 
                     # Authenticate
-                    with server.auth.sign_in(tableau_auth):
+                    with server.auth.sign_in(tableau_auth, site=site):  # Passing 'site' here
                         # Find the project by name
                         all_projects, pagination_item = server.projects.get()
                         project = next((proj for proj in all_projects if proj.name == project_name), None)
@@ -120,15 +120,15 @@ elif mode == "Download":
                     if not username or not password:
                         st.error("Please provide both username and password.")
                     else:
-                        tableau_auth = TSC.TableauAuth(username, password, site=site)
+                        tableau_auth = TSC.TableauAuth(username, password)
                 else:
                     if not token_name or not token_value:
                         st.error("Please provide both token name and token value.")
                     else:
-                        tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site=site)
+                        tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value)
 
                 # Authenticate with Tableau Cloud
-                with server.auth.sign_in(tableau_auth):
+                with server.auth.sign_in(tableau_auth, site=site):  # Passing 'site' here
                     # Collect all workbooks, data sources, and flows
                     content_data = []
 
