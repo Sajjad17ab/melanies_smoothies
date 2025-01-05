@@ -1,8 +1,9 @@
 import streamlit as st
 import tableauserverclient as TSC
+import os
 
 # Title of the Streamlit app
-st.title("Publish Tableau Workbook to Server")
+st.title("Publish Tableau Workbook, Data Source, and Flow to Server")
 
 # User inputs for authentication
 st.subheader("Authentication")
@@ -14,14 +15,16 @@ site = st.text_input("Enter your site name (leave empty for default)", "")
 # User input for project details
 project_name = st.text_input("Enter the project name on Tableau Server", "your_project")
 
-# File uploader for the Tableau workbook
-uploaded_file = st.file_uploader("Upload your Tableau workbook (.twbx)", type=["twbx"])
+# File uploader for Tableau files
+uploaded_file_workbook = st.file_uploader("Upload your Tableau workbook (.twbx)", type=["twbx"])
+uploaded_file_data_source = st.file_uploader("Upload your Tableau data source (.tds, .tdsx)", type=["tds", "tdsx"])
+uploaded_file_flow = st.file_uploader("Upload your Tableau flow (.tfl, .tfreed)", type=["tfl", "tfreed"])
 
-if uploaded_file:
-    st.write("File uploaded successfully!")
+if uploaded_file_workbook or uploaded_file_data_source or uploaded_file_flow:
+    st.write("File(s) uploaded successfully!")
 
     # When the user clicks 'Publish'
-    if st.button("Publish Workbook"):
+    if st.button("Publish to Tableau Server"):
         if not token_name or not token_value or not server_url or not project_name:
             st.error("Please fill in all the required fields before publishing.")
         else:
@@ -41,20 +44,38 @@ if uploaded_file:
                     if project is None:
                         st.error(f"Project '{project_name}' not found on the server.")
                     else:
-                        # Publish the workbook
-                        workbook_item = TSC.WorkbookItem(project.id)
-                        # Save the uploaded workbook to a temporary file location
-                        with open("temp_workbook.twbx", "wb") as f:
-                            f.write(uploaded_file.getbuffer())
-                        
-                        new_workbook = server.workbooks.publish(workbook_item, "temp_workbook.twbx", TSC.PublishMode.CreateNew)
-                        
-                        # Provide success feedback
-                        st.success(f"Workbook '{new_workbook.name}' has been successfully published to the '{project_name}' project.")
+                        # Publishing a Workbook
+                        if uploaded_file_workbook:
+                            workbook_item = TSC.WorkbookItem(project.id)
+                            with open("temp_workbook.twbx", "wb") as f:
+                                f.write(uploaded_file_workbook.getbuffer())
+                            new_workbook = server.workbooks.publish(workbook_item, "temp_workbook.twbx", TSC.PublishMode.CreateNew)
+                            st.success(f"Workbook '{new_workbook.name}' has been successfully published.")
 
-                        # Clean up the temporary file
-                        import os
-                        os.remove("temp_workbook.twbx")
+                            # Clean up the temporary workbook file
+                            os.remove("temp_workbook.twbx")
+                        
+                        # Publishing a Data Source
+                        if uploaded_file_data_source:
+                            data_source_item = TSC.DatasourceItem(project.id)
+                            with open("temp_data_source.tds", "wb") as f:
+                                f.write(uploaded_file_data_source.getbuffer())
+                            new_data_source = server.datasources.publish(data_source_item, "temp_data_source.tds", TSC.PublishMode.CreateNew)
+                            st.success(f"Data source '{new_data_source.name}' has been successfully published.")
+
+                            # Clean up the temporary data source file
+                            os.remove("temp_data_source.tds")
+
+                        # Publishing a Flow
+                        if uploaded_file_flow:
+                            flow_item = TSC.FlowItem(project.id)
+                            with open("temp_flow.tfl", "wb") as f:
+                                f.write(uploaded_file_flow.getbuffer())
+                            new_flow = server.flows.publish(flow_item, "temp_flow.tfl", TSC.PublishMode.CreateNew)
+                            st.success(f"Flow '{new_flow.name}' has been successfully published.")
+
+                            # Clean up the temporary flow file
+                            os.remove("temp_flow.tfl")
 
             except Exception as e:
                 st.error(f"An error occurred: {e}")
