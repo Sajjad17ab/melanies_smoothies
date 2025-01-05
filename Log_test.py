@@ -3,11 +3,14 @@ import tableauserverclient as TSC
 
 # Function to authenticate and list workbooks
 def get_tableau_workbooks(server_url, username, pat_name, pat_secret, site_id=''):
+    # Print values for debugging
+    print(f"pat_name: {pat_name}, pat_secret: {pat_secret}, site_id: {site_id}")
+    
     # Authenticate with Tableau Cloud using PAT
-    tableau_auth = TSC.PersonalAccessTokenAuth(pat_name, pat_secret, site=site_id)
-    server = TSC.Server(server_url, use_server_version=True)
-
     try:
+        tableau_auth = TSC.PersonalAccessTokenAuth(pat_name, pat_secret, site=site_id)
+        server = TSC.Server(server_url, use_server_version=True)
+
         # Sign in to Tableau Cloud
         with server.auth.sign_in(tableau_auth):
             # Fetch workbooks
