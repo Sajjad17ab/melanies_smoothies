@@ -5,7 +5,7 @@ import json
 # Title of the Streamlit app
 st.title("Tableau Login and Fetch Projects")
 
-# User input fields for Tableau Online Authentication (PAT)
+# User input fields for Tableau Authentication (PAT)
 st.subheader("Authentication to Tableau")
 
 # Option to choose between Tableau Online (Cloud) and Tableau Server
@@ -16,9 +16,15 @@ token_name = st.text_input("Enter your Tableau Personal Access Token (PAT) Name"
 token_value = st.text_input("Enter your Tableau Personal Access Token (PAT) Value", type="password")
 site = st.text_input("Enter your Tableau Site Name (leave empty for default)", "")
 
+# Input field for Tableau Online URL (only shown if "Tableau Online (Cloud)" is selected)
+if server_type == "Tableau Online (Cloud)":
+    cloud_url = st.text_input("Enter your Tableau Online Cloud URL (e.g., https://10ay.online.tableau.com)", "")
+else:
+    cloud_url = ""  # For Tableau Server, no need for this URL
+
 # Server URL setup based on the selected server type
 if server_type == "Tableau Online (Cloud)":
-    server_url = "https://10ay.online.tableau.com"  # Correct Tableau Online URL, adjust as needed
+    server_url = cloud_url  # Tableau Online Cloud URL provided by the user
 else:
     server_url = st.text_input("Enter your Tableau Server URL", "https://your-tableau-server.com")  # Tableau Server URL
 
@@ -45,6 +51,7 @@ def login_to_tableau():
         # Make POST request to authenticate
         response = requests.post(auth_url, json=payload, headers=headers)
 
+        # Check for successful login
         if response.status_code == 200:
             st.success("Login successful!")
             response_data = response.json()
@@ -58,9 +65,11 @@ def login_to_tableau():
 
             return token  # Return token for further API calls
 
+        # If login failed
         else:
+            error_message = response.json().get("error", {}).get("detail", "Unknown error")
             st.error(f"Login failed. Status code: {response.status_code}")
-            st.write(f"Response Text: {response.text}")
+            st.write(f"Error Message: {error_message}")
             return None
 
     except requests.exceptions.RequestException as e:
