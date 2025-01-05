@@ -30,14 +30,15 @@ if st.button("Test Login"):
 
             # Get the server information
             server_info = server_connection.server_info
-            st.write(f"Server Info: {server_info}")
 
-            # If the version is included in the server_info, access it via the json() method or attributes.
-            if hasattr(server_info, 'version'):
-                st.write(f"Tableau Server Version: {server_info.version}")
-            else:
-                # If there's no 'version' directly, attempt to parse from the json()
-                st.write("Unable to retrieve the version directly. Server Info: ", server_info.json())
+            # Access product version and build number directly
+            product_version = server_info.product_version
+            build_number = server_info.build_number
+            rest_api_version = server_info.rest_api_version
+
+            st.write(f"Tableau Product Version: {product_version}")
+            st.write(f"Tableau Build Number: {build_number}")
+            st.write(f"REST API Version: {rest_api_version}")
 
     except TSC.ServerResponseError as e:
         st.error(f"Server response error: {str(e)}")
