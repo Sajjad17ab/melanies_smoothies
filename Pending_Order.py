@@ -5,12 +5,12 @@ from snowflake.snowpark.functions import col, when_matched
 
 # Snowflake connection parameters
 sf_options = {
-    "account": "your_account",
-    "user": "your_user",
-    "password": "your_password",
-    "warehouse": "your_warehouse",
-    "database": "your_database",
-    "schema": "your_schema"
+    "account": "TYIVLAW-FG03967",
+    "user": "stream",
+    "password": "Merimarzi@123",
+    "warehouse": "COMPUTE_WH",
+    "database": "SMOOTHIES",
+    "schema": "PUBLIC"
 }
 
 # Create the Snowflake session manually
