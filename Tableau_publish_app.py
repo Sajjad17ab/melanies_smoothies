@@ -4,24 +4,7 @@ import os
 import pandas as pd
 
 # Title of the Streamlit app
-st.title("Publish or Export Tableau Content to Server or Cloud")
-
-# Center the server type radio button below the app title
-st.markdown("""
-    <style>
-        .centered-radio {
-            display: flex;
-            justify-content: center;
-            margin-top: 20px;
-        }
-    </style>
-    """, unsafe_allow_html=True)
-
-# Server Type Selection - Switch between Tableau Cloud and Tableau Server
-server_type = st.radio("Choose Tableau Environment", ("Tableau Server", "Tableau Cloud"), key="server_type", index=0)
-
-# Mode selection - Switch between Upload and Download
-mode = st.radio("Choose an option", ("Upload", "Download"))
+st.title("Publish or Export Tableau Content to Cloud")
 
 # Authentication method selection (radio button)
 auth_method = st.radio("Select Authentication Method", ("Username/Password", "Personal Access Token (PAT)"))
@@ -36,20 +19,19 @@ else:
     token_name = st.text_input("Enter your Personal Access Token (PAT) name", "")
     token_value = st.text_input("Enter your Personal Access Token (PAT) value", "")
 
-# Tableau Server or Cloud URL and Site based on selection
-if server_type == "Tableau Server":
-    server_url = st.text_input("Enter your Tableau server URL", "https://your-tableau-server.com")
-else:
-    server_url = st.text_input("Enter your Tableau Cloud URL", "https://your-tableau-cloud.com")
-
+# Tableau Cloud URL and Site
+server_url = st.text_input("Enter your Tableau Cloud URL", "https://your-tableau-cloud.com")
 site = st.text_input("Enter your site name (leave empty for default)", "")
 
 # Switch between Upload and Download options
+mode = st.radio("Choose an option", ("Upload", "Download"))
+
+# Upload functionality
 if mode == "Upload":
-    st.subheader("Upload Tableau Content to Server or Cloud")
+    st.subheader("Upload Tableau Content to Cloud")
 
     # User input for project details
-    project_name = st.text_input("Enter the project name on Tableau Server/Cloud", "your_project")
+    project_name = st.text_input("Enter the project name on Tableau Cloud", "your_project")
 
     # Single file uploader (accepts multiple types)
     uploaded_file = st.file_uploader("Upload your Tableau file (.twbx, .tds, .tdsx, .tfl, .tfreed)", 
@@ -59,7 +41,7 @@ if mode == "Upload":
         st.write("File uploaded successfully!")
 
         # When the user clicks 'Publish'
-        if st.button("Publish to Tableau Server or Cloud"):
+        if st.button("Publish to Tableau Cloud"):
             if not server_url or not project_name:
                 st.error("Please fill in all the required fields before publishing.")
             else:
@@ -69,13 +51,11 @@ if mode == "Upload":
                         if not username or not password:
                             st.error("Please provide both username and password.")
                         else:
-                            # Correctly pass site argument
                             tableau_auth = TSC.TableauAuth(username, password, site=site)
                     else:
                         if not token_name or not token_value:
                             st.error("Please provide both token name and token value.")
                         else:
-                            # Correctly pass site argument for PAT authentication
                             tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site=site)
 
                     # Create server object and authenticate
@@ -88,7 +68,7 @@ if mode == "Upload":
                         project = next((proj for proj in all_projects if proj.name == project_name), None)
 
                         if project is None:
-                            st.error(f"Project '{project_name}' not found on the server.")
+                            st.error(f"Project '{project_name}' not found on the cloud.")
                         else:
                             # Save the uploaded file to a temporary location
                             temp_file_path = "temp_uploaded_file"
@@ -125,6 +105,7 @@ if mode == "Upload":
                 except Exception as e:
                     st.error(f"An error occurred: {e}")
 
+# Download functionality
 elif mode == "Download":
     st.subheader("Export All Content Names and Owners to CSV")
 
@@ -132,7 +113,7 @@ elif mode == "Download":
     if st.button("Export All Content Names and Owners to CSV"):
         try:
             if not server_url:
-                st.error("Please enter the Tableau server URL first.")
+                st.error("Please enter the Tableau Cloud URL first.")
             else:
                 # Authenticate again if needed
                 if auth_method == "Username/Password":
@@ -146,7 +127,7 @@ elif mode == "Download":
                     else:
                         tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site=site)
 
-                # Authenticate with Tableau Server
+                # Authenticate with Tableau Cloud
                 with server.auth.sign_in(tableau_auth):
                     # Collect all workbooks, data sources, and flows
                     content_data = []
