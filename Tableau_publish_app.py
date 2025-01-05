@@ -64,8 +64,15 @@ if mode == "Upload":
 
                     # Authenticate
                     with server.auth.sign_in(tableau_auth, site=site):  # Passing 'site' here
+                        # Verification: Fetch a list of projects to check the connection
+                        all_projects, _ = server.projects.get()
+                        
+                        if all_projects:
+                            st.success("Successfully connected to Tableau Cloud!")
+                        else:
+                            st.error("Connection to Tableau Cloud failed. No projects found.")
+
                         # Find the project by name
-                        all_projects, pagination_item = server.projects.get()
                         project = next((proj for proj in all_projects if proj.name == project_name), None)
 
                         if project is None:
