@@ -31,9 +31,7 @@ if st.button("Test Login"):
             server_info = server_connection.server_info
             st.write(f"Connected to Tableau Server version: {server_info.version}")
 
-    except TSC.exceptions.TableauAuthException as e:
-        st.error(f"Authentication failed: {str(e)}")
-    except TSC.exceptions.ServerResponseError as e:
+    except TSC.ServerResponseError as e:
         st.error(f"Server response error: {str(e)}")
     except Exception as e:
-        st.error(f"An unexpected error occurred: {str(e)}")
+        st.error(f"An error occurred: {str(e)}")
