@@ -29,7 +29,7 @@ if Ingredients_List:
   
     Ingredients_string=''
 
-    for x in Ingredients_List:
+    for fruit_chosen in Ingredients_List:
         Ingredients_string += x +' '
         st.subheader(fruit_chosen + 'Nutrition Information')
         smoothiefroot_response = requests.get("https://my.smoothiefroot.com/api/fruit/" + fruit_chosen)
