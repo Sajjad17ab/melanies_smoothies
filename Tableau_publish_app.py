@@ -4,7 +4,10 @@ import os
 import pandas as pd
 
 # Title of the Streamlit app
-st.title("Publish or Export Tableau Content to Server")
+st.title("Publish or Export Tableau Content to Server or Cloud")
+
+# Server Type Selection - Switch between Tableau Cloud and Tableau Server
+server_type = st.radio("Choose Tableau Environment", ("Tableau Server", "Tableau Cloud"))
 
 # Mode selection - Switch between Upload and Download
 mode = st.radio("Choose an option", ("Upload", "Download"))
@@ -22,15 +25,20 @@ else:
     token_name = st.text_input("Enter your Personal Access Token (PAT) name", "")
     token_value = st.text_input("Enter your Personal Access Token (PAT) value", "")
 
-server_url = st.text_input("Enter your Tableau server URL", "https://your-tableau-server.com")
+# Tableau Server or Cloud URL and Site based on selection
+if server_type == "Tableau Server":
+    server_url = st.text_input("Enter your Tableau server URL", "https://your-tableau-server.com")
+else:
+    server_url = st.text_input("Enter your Tableau Cloud URL", "https://your-tableau-cloud.com")
+
 site = st.text_input("Enter your site name (leave empty for default)", "")
 
 # Switch between Upload and Download options
 if mode == "Upload":
-    st.subheader("Upload Tableau Content to Server")
+    st.subheader("Upload Tableau Content to Server or Cloud")
 
     # User input for project details
-    project_name = st.text_input("Enter the project name on Tableau Server", "your_project")
+    project_name = st.text_input("Enter the project name on Tableau Server/Cloud", "your_project")
 
     # Single file uploader (accepts multiple types)
     uploaded_file = st.file_uploader("Upload your Tableau file (.twbx, .tds, .tdsx, .tfl, .tfreed)", 
@@ -40,7 +48,7 @@ if mode == "Upload":
         st.write("File uploaded successfully!")
 
         # When the user clicks 'Publish'
-        if st.button("Publish to Tableau Server"):
+        if st.button("Publish to Tableau Server or Cloud"):
             if not server_url or not project_name:
                 st.error("Please fill in all the required fields before publishing.")
             else:
@@ -88,7 +96,7 @@ if mode == "Upload":
                                 data_source_item = TSC.DatasourceItem(project.id)
                                 new_data_source = server.datasources.publish(data_source_item, temp_file_path, TSC.PublishMode.CreateNew)
                                 st.success(f"Data source '{new_data_source.name}' has been successfully published.")
-                                
+                                 
                             elif file_extension in ["tfl", "tfreed"]:
                                 # Publishing a Flow
                                 flow_item = TSC.FlowItem(project.id)
@@ -96,7 +104,7 @@ if mode == "Upload":
                                 st.success(f"Flow '{new_flow.name}' has been successfully published.")
 
                             else:
-                                st.error("Unsupported file type.")
+                                st.error("Unsupported file type. Please upload a .twbx, .tds, .tdsx, .tfl, or .tfreed file.")
 
                             # Clean up the temporary file
                             os.remove(temp_file_path)
@@ -112,8 +120,6 @@ elif mode == "Download":
         try:
             if not server_url:
                 st.error("Please enter the Tableau server URL first.")
-            elif not project_name:
-                st.error("Please enter the project name.")
             else:
                 # Authenticate again if needed
                 if auth_method == "Username/Password":
