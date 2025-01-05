@@ -15,7 +15,7 @@ def sign_in(token_name: str, token_value: str, tableau_site: str) -> TSC.Server:
         TSC.Server: The authenticated Tableau Server object or None if failed.
     """
     tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, tableau_site)
-    server = TSC.Server('https://dub01.online.tableau.com')
+    server = TSC.Server('https://prod-apnortheast-a.online.tableau.com/#/site/mohdsajjadsheikh-8334074aaa/home')
 
     try:
         server.auth.sign_in(tableau_auth)
