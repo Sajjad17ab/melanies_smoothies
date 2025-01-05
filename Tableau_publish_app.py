@@ -5,10 +5,19 @@ import os
 # Title of the Streamlit app
 st.title("Publish Tableau Content to Server")
 
-# User inputs for authentication
-st.subheader("Authentication")
-token_name = st.text_input("Enter your Personal Access Token (PAT) name", "")
-token_value = st.text_input("Enter your Personal Access Token (PAT) value", "")
+# Authentication method selection (radio button)
+auth_method = st.radio("Select Authentication Method", ("Username/Password", "Personal Access Token (PAT)"))
+
+# Authentication input fields (conditional based on selected method)
+if auth_method == "Username/Password":
+    st.subheader("Username and Password Authentication")
+    username = st.text_input("Enter your Tableau username", "")
+    password = st.text_input("Enter your Tableau password", "", type="password")
+else:
+    st.subheader("Personal Access Token (PAT) Authentication")
+    token_name = st.text_input("Enter your Personal Access Token (PAT) name", "")
+    token_value = st.text_input("Enter your Personal Access Token (PAT) value", "")
+
 server_url = st.text_input("Enter your Tableau server URL", "https://your-tableau-server.com")
 site = st.text_input("Enter your site name (leave empty for default)", "")
 
@@ -24,12 +33,21 @@ if uploaded_file:
 
     # When the user clicks 'Publish'
     if st.button("Publish to Tableau Server"):
-        if not token_name or not token_value or not server_url or not project_name:
+        if not server_url or not project_name:
             st.error("Please fill in all the required fields before publishing.")
         else:
             try:
-                # Create authentication object
-                tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site=site)
+                # Create authentication object based on selected method
+                if auth_method == "Username/Password":
+                    if not username or not password:
+                        st.error("Please provide both username and password.")
+                        return
+                    tableau_auth = TSC.TableauAuth(username, password, site=site)
+                else:
+                    if not token_name or not token_value:
+                        st.error("Please provide both token name and token value.")
+                        return
+                    tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site=site)
 
                 # Create server object and authenticate
                 server = TSC.Server(server_url, use_server_version=True)
