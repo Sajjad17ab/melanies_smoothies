@@ -6,8 +6,19 @@ import pandas as pd
 # Title of the Streamlit app
 st.title("Publish or Export Tableau Content to Server or Cloud")
 
+# Center the server type radio button below the app title
+st.markdown("""
+    <style>
+        .centered-radio {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
 # Server Type Selection - Switch between Tableau Cloud and Tableau Server
-server_type = st.radio("Choose Tableau Environment", ("Tableau Server", "Tableau Cloud"))
+server_type = st.radio("Choose Tableau Environment", ("Tableau Server", "Tableau Cloud"), key="server_type", index=0)
 
 # Mode selection - Switch between Upload and Download
 mode = st.radio("Choose an option", ("Upload", "Download"))
