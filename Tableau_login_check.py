@@ -3,11 +3,11 @@ from tableau_api_lib import TableauServerConnection
 from tableau_api_lib.utils.querying import get_projects_dataframe
 
 # Streamlit app title
-st.title("Tableau Online Login")
+st.title("Tableau Online Login with PAT")
 
 # User input fields
-username = st.text_input("Username")
-password = st.text_input("Password", type="password")
+pat_name = st.text_input("Personal Access Token Name")
+pat_value = st.text_input("Personal Access Token Value", type="password")
 site_id = st.text_input("Site ID (leave blank for default)", '')
 
 # Login button
@@ -17,8 +17,8 @@ if st.button("Login"):
     # Create a connection object
     connection = TableauServerConnection(
         server=TABLEAU_ONLINE_URL,
-        username=username,
-        password=password,
+        personal_access_token_name=pat_name,
+        personal_access_token_value=pat_value,
         site_id=site_id
     )
 
