@@ -1,5 +1,5 @@
-import tableauserverclient as TSC
 import streamlit as st
+import requests
 
 # Streamlit app title
 st.title("Tableau Cloud Login Check")
@@ -14,15 +14,40 @@ server_url = st.text_input("Enter your Tableau Cloud server URL", "https://your-
 
 # Button to trigger login
 if st.button("Login to Tableau Cloud"):
-    try:
-        # Create authentication object using PersonalAccessTokenAuth
-        tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site=site if site else None)
-        server = TSC.Server(server_url, use_server_version=True)
-
-        # Attempt login
-        with server.auth.sign_in(tableau_auth):
-            st.success("Login successful!")
-            st.write("You are now logged in to Tableau Cloud.")
+    if not server_url or not token_name or not token_value:
+        st.error("Please fill in all required fields.")
+    else:
+        # Build the authentication URL
+        auth_url = f"{server_url}/api/3.10/auth/signin"
         
-    except Exception as e:
-        st.error(f"Login failed: {e}")
+        # Construct the payload for authentication
+        payload = {
+            "credentials": {
+                "name": token_name,
+                "password": token_value,
+                "site": {
+                    "contentUrl": site if site else ""
+                }
+            }
+        }
+        
+        # Set headers for the request
+        headers = {
+            "Content-Type": "application/json"
+        }
+
+        try:
+            # Send the POST request to sign in
+            response = requests.post(auth_url, json=payload, headers=headers)
+            response_data = response.json()
+
+            # Check if the login was successful
+            if response.status_code == 200 and "credentials" in response_data:
+                st.success("Login successful!")
+                # You can extract and display user details here
+                user = response_data["credentials"]["user"]
+                st.write(f"Welcome, {user['name']}!")
+            else:
+                st.error(f"Login failed: {response_data.get('error', 'Unknown error')}")
+        except Exception as e:
+            st.error(f"An error occurred: {e}")
