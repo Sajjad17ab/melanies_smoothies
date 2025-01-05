@@ -3,23 +3,30 @@ import requests
 import json
 
 # Title of the Streamlit app
-st.title("Tableau Online Login and Fetch Projects")
+st.title("Tableau Login and Fetch Projects")
 
 # User input fields for Tableau Online Authentication (PAT)
-st.subheader("Authentication to Tableau Online")
+st.subheader("Authentication to Tableau")
 
+# Option to choose between Tableau Server or Tableau Online (Cloud)
+server_type = st.radio("Select your Tableau type", ("Tableau Online (Cloud)", "Tableau Server"))
+
+# User input for PAT
 token_name = st.text_input("Enter your Tableau Personal Access Token (PAT) Name")
 token_value = st.text_input("Enter your Tableau Personal Access Token (PAT) Value", type="password")
 site = st.text_input("Enter your Tableau Site Name (leave empty for default)", "")
 
-# Define server URL for Tableau Online
-server_url = "https://<your-site-name>.online.tableau.com"  # Replace with your actual Tableau Online site URL
+# Server URL setup based on the selected server type
+if server_type == "Tableau Online (Cloud)":
+    server_url = "https://online.tableau.com"  # Default Tableau Online URL
+else:
+    server_url = st.text_input("Enter your Tableau Server URL", "https://your-tableau-server.com")  # Tableau Server URL
 
 # Authentication API URL
 auth_url = f"{server_url}/api/3.10/auth/signin"
 
-# Function to login to Tableau Online
-def login_to_tableau_online():
+# Function to login to Tableau Online or Tableau Server
+def login_to_tableau():
     payload = {
         "credentials": {
             "name": token_name,
@@ -61,10 +68,10 @@ def login_to_tableau_online():
         return None
 
 # Button to trigger the login
-if st.button("Login to Tableau Online"):
+if st.button("Login to Tableau"):
     # Check if required fields are provided
     if token_name and token_value:
-        token = login_to_tableau_online()
+        token = login_to_tableau()
         
         if token:
             # Use the token to get additional info like projects
@@ -81,7 +88,7 @@ if st.button("Login to Tableau Online"):
                     projects_data = projects_response.json()
                     projects = projects_data.get('projects', {}).get('project', [])
                     if projects:
-                        st.write("List of Projects on Tableau Online:")
+                        st.write("List of Projects:")
                         for project in projects:
                             st.write(f"Project Name: {project['name']}")
                     else:
