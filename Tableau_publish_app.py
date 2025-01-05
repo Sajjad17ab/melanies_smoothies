@@ -2,6 +2,7 @@ import streamlit as st
 import tableauserverclient as TSC
 import os
 import pandas as pd
+import uuid
 
 # Title of the Streamlit app
 st.title("Publish or Export Tableau Content to Cloud")
@@ -71,7 +72,8 @@ if mode == "Upload":
                             st.error(f"Project '{project_name}' not found on the cloud.")
                         else:
                             # Save the uploaded file to a temporary location
-                            temp_file_path = "temp_uploaded_file"
+                            temp_file_name = f"temp_uploaded_file_{uuid.uuid4().hex}"
+                            temp_file_path = os.path.join("/tmp", temp_file_name)
                             with open(temp_file_path, "wb") as f:
                                 f.write(uploaded_file.getbuffer())
 
@@ -83,7 +85,7 @@ if mode == "Upload":
                                 workbook_item = TSC.WorkbookItem(project.id)
                                 new_workbook = server.workbooks.publish(workbook_item, temp_file_path, TSC.PublishMode.CreateNew)
                                 st.success(f"Workbook '{new_workbook.name}' has been successfully published.")
-                                
+                                  
                             elif file_extension in ["tds", "tdsx"]:
                                 # Publishing a Data Source
                                 data_source_item = TSC.DatasourceItem(project.id)
