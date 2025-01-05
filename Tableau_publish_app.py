@@ -41,13 +41,13 @@ if uploaded_file:
                 if auth_method == "Username/Password":
                     if not username or not password:
                         st.error("Please provide both username and password.")
-                        return
-                    tableau_auth = TSC.TableauAuth(username, password, site=site)
+                    else:
+                        tableau_auth = TSC.TableauAuth(username, password, site=site)
                 else:
                     if not token_name or not token_value:
                         st.error("Please provide both token name and token value.")
-                        return
-                    tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site=site)
+                    else:
+                        tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site=site)
 
                 # Create server object and authenticate
                 server = TSC.Server(server_url, use_server_version=True)
