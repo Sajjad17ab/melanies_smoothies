@@ -31,14 +31,10 @@ if st.button("Test Login"):
             # Get the server information
             server_info = server_connection.server_info
 
-            # Access product version and build number directly
-            product_version = server_info.product_version
-            build_number = server_info.build_number
-            rest_api_version = server_info.rest_api_version
-
-            st.write(f"Tableau Product Version: {product_version}")
-            st.write(f"Tableau Build Number: {build_number}")
-            st.write(f"REST API Version: {rest_api_version}")
+            # Display the entire server info using json()
+            server_info_json = server_info.json()
+            st.write("Server Info JSON:")
+            st.json(server_info_json)
 
     except TSC.ServerResponseError as e:
         st.error(f"Server response error: {str(e)}")
