@@ -69,11 +69,13 @@ if mode == "Upload":
                         if not username or not password:
                             st.error("Please provide both username and password.")
                         else:
-                            tableau_auth = TSC.TableauAuth(username, password, site=site)
+                            # Ensure that you pass the `site` argument correctly
+                            tableau_auth = TSC.TableauAuth(username, password, site=site)  # site parameter is correct here
                     else:
                         if not token_name or not token_value:
                             st.error("Please provide both token name and token value.")
                         else:
+                            # Use PersonalAccessTokenAuth correctly with site parameter
                             tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site=site)
 
                     # Create server object and authenticate
@@ -132,44 +134,4 @@ elif mode == "Download":
             if not server_url:
                 st.error("Please enter the Tableau server URL first.")
             else:
-                # Authenticate again if needed
-                if auth_method == "Username/Password":
-                    if not username or not password:
-                        st.error("Please provide both username and password.")
-                    else:
-                        tableau_auth = TSC.TableauAuth(username, password, site=site)
-                else:
-                    if not token_name or not token_value:
-                        st.error("Please provide both token name and token value.")
-                    else:
-                        tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site=site)
-
-                # Authenticate with Tableau Server
-                with server.auth.sign_in(tableau_auth):
-                    # Collect all workbooks, data sources, and flows
-                    content_data = []
-
-                    # Get Workbooks
-                    all_workbooks, _ = server.workbooks.get()
-                    for workbook in all_workbooks:
-                        content_data.append({"Content Type": "Workbook", "Name": workbook.name, "Owner": workbook.owner.name})
-
-                    # Get Data Sources
-                    all_data_sources, _ = server.datasources.get()
-                    for data_source in all_data_sources:
-                        content_data.append({"Content Type": "Data Source", "Name": data_source.name, "Owner": data_source.owner.name})
-
-                    # Get Flows
-                    all_flows, _ = server.flows.get()
-                    for flow in all_flows:
-                        content_data.append({"Content Type": "Flow", "Name": flow.name, "Owner": flow.owner.name})
-
-                    # Convert to DataFrame
-                    df = pd.DataFrame(content_data)
-
-                    # Export to CSV (downloadable)
-                    csv = df.to_csv(index=False)
-                    st.download_button("Download CSV", csv, "content_and_owners.csv", "text/csv")
-
-        except Exception as e:
-            st.error(f"An error occurred while exporting: {e}")
+                # A
