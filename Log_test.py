@@ -1,90 +1,96 @@
 import streamlit as st
 import tableauserverclient as TSC
-import pandas as pd
+import logging
 
-# Function to sign in to Tableau Server using PAT (Personal Access Token)
-def sign_in(token_name: str, token_value: str, tableau_site: str) -> TSC.Server:
-    """Sign in to Tableau Server using Personal Access Token.
+# Streamlit UI
+st.title("Tableau View Exporter")
 
-    Args:
-        token_name (str): The name of the Personal Access Token.
-        token_value (str): The value of the Personal Access Token.
-        tableau_site (str): The site ID for Tableau.
+# Input fields for server details
+server = st.text_input("Server address")
+site = st.text_input("Site name")
+token_name = st.text_input("Personal Access Token name")
+token_value = st.text_input("Personal Access Token value", type="password")
 
-    Returns:
-        TSC.Server: The authenticated Tableau Server object or None if failed.
-    """
-    tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, tableau_site)
-    server = TSC.Server('https://prod-apnortheast-a.online.tableau.com/#/site/mohdsajjadsheikh-8334074aaa/home')
+# Select the type of export (PDF, PNG, CSV)
+export_type = st.radio("Select export type", ("PDF", "PNG", "CSV"))
 
+# File name input
+filename = st.text_input("Filename to save exported data", "output")
+
+# Filter field
+filter_field = st.text_input("Optional: View filter (COLUMN:VALUE)")
+
+# Select the resource type (view or workbook)
+resource_type = st.radio("Select resource type", ("View", "Workbook"))
+
+# Resource ID input (LUID for the view or workbook)
+resource_id = st.text_input("Resource ID (LUID)", "")
+
+# Language input (optional)
+language = st.text_input("Language (e.g., en, fr, es)", "")
+
+# Logging level (optional)
+logging_level = st.selectbox("Logging level", ["debug", "info", "error"])
+
+# Action button to trigger the export
+if st.button("Export"):
+    # Set up logging
+    logging.basicConfig(level=getattr(logging, logging_level.upper()))
+
+    # Tableau Authentication
+    tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site)
+    server_connection = TSC.Server(server, use_server_version=True, http_options={"verify": False})
+    
     try:
-        server.auth.sign_in(tableau_auth)
-        return server
+        with server_connection.auth.sign_in(tableau_auth):
+            st.write("Connected to Tableau Server.")
+
+            # Determine which resource to export
+            if resource_type == "Workbook":
+                item = server_connection.workbooks.get_by_id(resource_id)
+            else:
+                item = server_connection.views.get_by_id(resource_id)
+
+            if not item:
+                st.error(f"No item found for ID: {resource_id}")
+            else:
+                st.write(f"Item found: {item.name}")
+
+                # Determine export options
+                if export_type == "PDF":
+                    populate_func_name, option_factory_name, member_name, extension = "populate_pdf", "PDFRequestOptions", "pdf", "pdf"
+                elif export_type == "PNG":
+                    populate_func_name, option_factory_name, member_name, extension = "populate_image", "ImageRequestOptions", "image", "png"
+                else:
+                    populate_func_name, option_factory_name, member_name, extension = "populate_csv", "CSVRequestOptions", "csv", "csv"
+
+                populate_func = getattr(server_connection.views, populate_func_name)
+                option_factory = getattr(TSC, option_factory_name)
+                options = option_factory()
+
+                # Apply filter if provided
+                if filter_field:
+                    options = options.vf(*filter_field.split(":"))
+
+                # Apply language if provided
+                if language:
+                    options.language = language
+
+                # Set default filename if not provided
+                if not filename:
+                    filename = f"out-{options.language}.{extension}"
+
+                # Perform the export
+                populate_func(item, options)
+
+                # Save to file
+                with open(filename, "wb") as f:
+                    if member_name == "csv":
+                        f.writelines(getattr(item, member_name))
+                    else:
+                        f.write(getattr(item, member_name))
+                
+                st.success(f"Export saved as {filename}")
+
     except Exception as e:
-        st.error(f"Failed to sign in: {e}")
-        return None
-
-# Function to get workbook connections information
-def get_workbooks_connections(server, project_name=None, workbook_name=None) -> pd.DataFrame:
-    """Get workbook connection details from Tableau Server.
-
-    Args:
-        server (TSC.Server): The authenticated Tableau Server object.
-        project_name (str, optional): Filter for specific project name.
-        workbook_name (str, optional): Filter for specific workbook name.
-
-    Returns:
-        pd.DataFrame: DataFrame containing workbook connection details.
-    """
-    if not server:
-        st.error("Server connection is not established.")
-        return pd.DataFrame()
-
-    # Retrieve all workbooks from the server
-    all_workbooks = list(TSC.Pager(server.workbooks))
-    
-    # Filter the list of workbooks based on project_name and workbook_name
-    workbooks = list(filter(lambda workbook: (
-        (workbook.project_name == project_name or not project_name) and 
-        (workbook.name == workbook_name or not workbook_name)
-    ), all_workbooks))
-
-    # Extract workbook connection details
-    list_of_workbooks = []
-    for workbook in workbooks:
-        server.workbooks.populate_connections(workbook)  # Populate connections for the workbook
-        for connection in workbook.connections:
-            list_of_workbooks.append([
-                workbook.project_name, 
-                workbook.name, 
-                connection.datasource_name, 
-                connection.connection_type, 
-                connection.username
-            ])
-
-    # Create a Pandas DataFrame
-    data = pd.DataFrame(list_of_workbooks, columns=['project_name', 'workbook_name', 'datasource_name', 'connection_type', 'connection_username'])
-
-    return data
-
-# Streamlit app layout
-st.title("Tableau Server Workbook Connections")
-
-# User inputs
-token_name = st.text_input("Enter your Personal Access Token Name:")
-token_value = st.text_input("Enter your Personal Access Token Value:", type="password")
-site_id = st.text_input("Enter your Tableau Site ID (leave blank for default):")
-project_name = st.text_input("Enter Project Name (optional):")
-workbook_name = st.text_input("Enter Workbook Name (optional):")
-
-# Login button
-if st.button("Login and Get Workbook Connections"):
-    server = sign_in(token_name, token_value, site_id or '')
-    
-    if server:
-        connections_df = get_workbooks_connections(server, project_name, workbook_name)
-        if not connections_df.empty:
-            st.success("Successfully retrieved workbook connections!")
-            st.dataframe(connections_df)
-        else:
-            st.warning("No workbook connections found.")
+        st.error(f"An error occurred: {str(e)}")
