@@ -2,7 +2,7 @@ import streamlit as st
 import tableauserverclient as TSC
 
 # Streamlit UI
-st.title("Tableau Login Test")
+st.title("Tableau Login Test - Detailed Information")
 
 # Input fields for server details
 server = st.text_input("Server address")
@@ -20,6 +20,18 @@ if st.button("Test Login"):
         # Attempt to sign in
         with server_connection.auth.sign_in(tableau_auth):
             st.write("Connected to Tableau Server successfully!")
+
+            # Display authentication details
+            st.write(f"Authenticated with site: {site}")
+            st.write(f"Using token: {token_name}")
+
+            # Get and display the server information
+            server_info = server_connection.server_info
+
+            # Displaying product version, build number, and REST API version
+            st.write(f"Tableau Product Version: {server_info.product_version}")
+            st.write(f"Tableau Build Number: {server_info.build_number}")
+            st.write(f"REST API Version: {server_info.rest_api_version}")
 
     except TSC.ServerResponseError as e:
         st.error(f"Server response error: {str(e)}")
