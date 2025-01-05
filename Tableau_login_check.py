@@ -8,7 +8,7 @@ st.title("Tableau Login and Fetch Projects")
 # User input fields for Tableau Online Authentication (PAT)
 st.subheader("Authentication to Tableau")
 
-# Option to choose between Tableau Server or Tableau Online (Cloud)
+# Option to choose between Tableau Online (Cloud) and Tableau Server
 server_type = st.radio("Select your Tableau type", ("Tableau Online (Cloud)", "Tableau Server"))
 
 # User input for PAT
@@ -18,7 +18,7 @@ site = st.text_input("Enter your Tableau Site Name (leave empty for default)", "
 
 # Server URL setup based on the selected server type
 if server_type == "Tableau Online (Cloud)":
-    server_url = "https://online.tableau.com"  # Default Tableau Online URL
+    server_url = "https://10ay.online.tableau.com"  # Correct Tableau Online URL, adjust as needed
 else:
     server_url = st.text_input("Enter your Tableau Server URL", "https://your-tableau-server.com")  # Tableau Server URL
 
@@ -75,13 +75,19 @@ if st.button("Login to Tableau"):
         
         if token:
             # Use the token to get additional info like projects
-            projects_url = f"{server_url}/api/3.10/sites/{site}/projects"
+            if server_type == "Tableau Online (Cloud)":
+                # Correct API endpoint for Tableau Online
+                projects_url = f"{server_url}/api/3.10/sites/{site}/projects"
+            else:
+                # Tableau Server - Make sure the correct endpoint URL is provided
+                projects_url = f"{server_url}/api/3.10/sites/{site}/projects"
+            
             headers = {
                 "X-Tableau-Auth": token
             }
 
             try:
-                # Get the list of projects
+                # Make a GET request to fetch projects
                 projects_response = requests.get(projects_url, headers=headers)
 
                 if projects_response.status_code == 200:
