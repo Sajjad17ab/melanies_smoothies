@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+import json
 
 # Streamlit app title
 st.title("Tableau Cloud Login Check")
@@ -39,15 +40,15 @@ if st.button("Login to Tableau Cloud"):
         try:
             # Send the POST request to sign in
             response = requests.post(auth_url, json=payload, headers=headers)
-            response_data = response.json()
-
-            # Check if the login was successful
-            if response.status_code == 200 and "credentials" in response_data:
-                st.success("Login successful!")
-                # You can extract and display user details here
-                user = response_data["credentials"]["user"]
-                st.write(f"Welcome, {user['name']}!")
+            
+            # Debugging: Log the response status code and content
+            st.write(f"Response Status Code: {response.status_code}")
+            st.write(f"Response Text: {response.text}")
+            
+            # Check if the response is empty or if the status code is not 200
+            if response.status_code != 200:
+                st.error(f"Login failed: {response.status_code}. Response: {response.text}")
             else:
-                st.error(f"Login failed: {response_data.get('error', 'Unknown error')}")
-        except Exception as e:
-            st.error(f"An error occurred: {e}")
+                # Try to parse the response JSON
+                response_data = response.json()
+              
