@@ -26,12 +26,19 @@ if st.button("Test Login"):
             st.write(f"Using token: {token_name}")
 
             # Get and display the server information
-            server_info = server_connection.server_info
+            try:
+                server_info = server_connection.server_info
 
-            # Displaying product version, build number, and REST API version
-            st.write(f"Tableau Product Version: {server_info.product_version}")
-            st.write(f"Tableau Build Number: {server_info.build_number}")
-            st.write(f"REST API Version: {server_info.rest_api_version}")
+                # Check if the version is available
+                product_version = getattr(server_info, 'product_version', 'Unknown Version')
+                build_number = getattr(server_info, 'build_number', 'Unknown Build')
+                rest_api_version = getattr(server_info, 'rest_api_version', 'Unknown API Version')
+
+                st.write(f"Tableau Product Version: {product_version}")
+                st.write(f"Tableau Build Number: {build_number}")
+                st.write(f"REST API Version: {rest_api_version}")
+            except Exception as e:
+                st.error(f"Failed to retrieve server info: {str(e)}")
 
             # Fetch and display available workbooks
             workbooks, pagination_item = server_connection.workbooks.get()
