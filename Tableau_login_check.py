@@ -26,28 +26,31 @@ site_id = st.text_input("Site ID (leave blank for default)", '')
 
 # Login button
 if st.button("Login"):
-    # Create a connection object based on provided credentials
-    connection = TableauServerConnection(
-        server=tableau_url,
-        username=username if username else None,
-        password=password if password else None,
-        personal_access_token_name=pat_name if pat_name else None,
-        personal_access_token_value=pat_value if pat_value else None,
-        site_id=site_id
-    )
+    try:
+        # Create a connection object based on provided credentials
+        connection = TableauServerConnection(
+            server=tableau_url,
+            username=username if username else None,
+            password=password if password else None,
+            personal_access_token_name=pat_name if pat_name else None,
+            personal_access_token_value=pat_value if pat_value else None,
+            site_id=site_id
+        )
 
-    # Log in to Tableau Online
-    connection.sign_in()
+        # Log in to Tableau Online
+        connection.sign_in()
 
-    # Check if login was successful
-    if connection.is_signed_in():
-        st.success("Successfully logged in to Tableau Online!")
+        # Check if login was successful
+        if connection.is_signed_in():
+            st.success("Successfully logged in to Tableau Online!")
 
-        # Example: Get a list of projects
-        projects_df = get_projects_dataframe(connection)
-        st.write("Projects:", projects_df)
+            # Example: Get a list of projects
+            projects_df = get_projects_dataframe(connection)
+            st.write("Projects:", projects_df)
 
-        # Sign out when done
-        connection.sign_out()
-    else:
-        st.error("Login failed. Please check your credentials.")
+            # Sign out when done
+            connection.sign_out()
+        else:
+            st.error("Login failed. Please check your credentials.")
+    except Exception as e:
+        st.error(f"An error occurred: {e}")
