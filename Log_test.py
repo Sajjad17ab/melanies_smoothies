@@ -1,52 +1,90 @@
 import streamlit as st
 import tableauserverclient as TSC
+import pandas as pd
 
-# Function to authenticate and list workbooks
-def get_tableau_workbooks(server_url, username, pat_name, pat_secret, site_id=''):
-    # Print values for debugging
-    print(f"pat_name: {pat_name}, pat_secret: {pat_secret}, site_id: {site_id}")
-    
-    # Authenticate with Tableau Cloud using PAT
+# Function to sign in to Tableau Server using PAT (Personal Access Token)
+def sign_in(token_name: str, token_value: str, tableau_site: str) -> TSC.Server:
+    """Sign in to Tableau Server using Personal Access Token.
+
+    Args:
+        token_name (str): The name of the Personal Access Token.
+        token_value (str): The value of the Personal Access Token.
+        tableau_site (str): The site ID for Tableau.
+
+    Returns:
+        TSC.Server: The authenticated Tableau Server object or None if failed.
+    """
+    tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, tableau_site)
+    server = TSC.Server('https://dub01.online.tableau.com')
+
     try:
-        tableau_auth = TSC.PersonalAccessTokenAuth(pat_name, pat_secret, site=site_id)
-        server = TSC.Server(server_url, use_server_version=True)
-
-        # Sign in to Tableau Cloud
-        with server.auth.sign_in(tableau_auth):
-            # Fetch workbooks
-            all_workbooks, pagination_item = server.workbooks.get()
-            workbooks_list = [workbook.name for workbook in all_workbooks]
-            return workbooks_list
+        server.auth.sign_in(tableau_auth)
+        return server
     except Exception as e:
-        return f"Error: {str(e)}"
+        st.error(f"Failed to sign in: {e}")
+        return None
 
-# Streamlit UI
-def main():
-    st.title("Tableau Cloud Connection")
+# Function to get workbook connections information
+def get_workbooks_connections(server, project_name=None, workbook_name=None) -> pd.DataFrame:
+    """Get workbook connection details from Tableau Server.
 
-    # Input fields for user credentials and information
-    server_url = st.text_input("Enter Tableau Cloud URL (e.g., https://10ax.online.tableau.com):")
-    username = st.text_input("Enter your Tableau username:")
-    pat_name = st.text_input("Enter your Personal Access Token name:")
-    pat_secret = st.text_input("Enter your Personal Access Token secret:", type="password")
-    site_id = st.text_input("Enter Site ID (Leave empty for default site):")
+    Args:
+        server (TSC.Server): The authenticated Tableau Server object.
+        project_name (str, optional): Filter for specific project name.
+        workbook_name (str, optional): Filter for specific workbook name.
+
+    Returns:
+        pd.DataFrame: DataFrame containing workbook connection details.
+    """
+    if not server:
+        st.error("Server connection is not established.")
+        return pd.DataFrame()
+
+    # Retrieve all workbooks from the server
+    all_workbooks = list(TSC.Pager(server.workbooks))
     
-    # Button to fetch workbooks
-    if st.button("Fetch Workbooks"):
-        if server_url and username and pat_name and pat_secret:
-            workbooks = get_tableau_workbooks(server_url, username, pat_name, pat_secret, site_id)
-            if isinstance(workbooks, list):
-                if workbooks:
-                    st.subheader("List of Workbooks in your Tableau Cloud:")
-                    for workbook in workbooks:
-                        st.write(f"- {workbook}")
-                else:
-                    st.write("No workbooks found.")
-            else:
-                st.error(workbooks)  # Display error message if an exception occurred
-        else:
-            st.error("Please fill in all required fields.")
+    # Filter the list of workbooks based on project_name and workbook_name
+    workbooks = list(filter(lambda workbook: (
+        (workbook.project_name == project_name or not project_name) and 
+        (workbook.name == workbook_name or not workbook_name)
+    ), all_workbooks))
 
-# Run the app
-if __name__ == "__main__":
-    main()
+    # Extract workbook connection details
+    list_of_workbooks = []
+    for workbook in workbooks:
+        server.workbooks.populate_connections(workbook)  # Populate connections for the workbook
+        for connection in workbook.connections:
+            list_of_workbooks.append([
+                workbook.project_name, 
+                workbook.name, 
+                connection.datasource_name, 
+                connection.connection_type, 
+                connection.username
+            ])
+
+    # Create a Pandas DataFrame
+    data = pd.DataFrame(list_of_workbooks, columns=['project_name', 'workbook_name', 'datasource_name', 'connection_type', 'connection_username'])
+
+    return data
+
+# Streamlit app layout
+st.title("Tableau Server Workbook Connections")
+
+# User inputs
+token_name = st.text_input("Enter your Personal Access Token Name:")
+token_value = st.text_input("Enter your Personal Access Token Value:", type="password")
+site_id = st.text_input("Enter your Tableau Site ID (leave blank for default):")
+project_name = st.text_input("Enter Project Name (optional):")
+workbook_name = st.text_input("Enter Workbook Name (optional):")
+
+# Login button
+if st.button("Login and Get Workbook Connections"):
+    server = sign_in(token_name, token_value, site_id or '')
+    
+    if server:
+        connections_df = get_workbooks_connections(server, project_name, workbook_name)
+        if not connections_df.empty:
+            st.success("Successfully retrieved workbook connections!")
+            st.dataframe(connections_df)
+        else:
+            st.warning("No workbook connections found.")
