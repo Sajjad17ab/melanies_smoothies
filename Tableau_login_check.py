@@ -3,22 +3,22 @@ import requests
 import json
 
 # Streamlit app title
-st.title("Tableau Cloud Login Check")
+st.title("Tableau Online Login Check")
 
-# User input fields for Tableau Cloud credentials
+# User input fields for Tableau Online credentials
 token_name = st.text_input("Enter your Tableau Personal Access Token (PAT) name")
 token_value = st.text_input("Enter your Tableau Personal Access Token (PAT) value", type="password")
 site = st.text_input("Enter your Tableau site name (leave empty for default)", "")
 
-# Tableau Cloud server URL (for Cloud, it's typically a specific URL for your Tableau Cloud instance)
-server_url = st.text_input("Enter your Tableau Cloud server URL", "https://your-tableau-cloud-server.com")
+# Tableau Online server URL
+server_url = st.text_input("Enter your Tableau Online server URL", "https://your-tableau-online-site.online.tableau.com")
 
 # Button to trigger login
-if st.button("Login to Tableau Cloud"):
+if st.button("Login to Tableau Online"):
     if not server_url or not token_name or not token_value:
         st.error("Please fill in all required fields.")
     else:
-        # Build the authentication URL
+        # Build the authentication URL for Tableau Online
         auth_url = f"{server_url}/api/3.10/auth/signin"
         
         # Construct the payload for authentication
