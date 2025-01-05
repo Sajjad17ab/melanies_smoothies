@@ -4,10 +4,10 @@ import os
 import pandas as pd
 
 # Title of the Streamlit app
-st.title("Publish or Export Tableau Content to Server")
+st.title("Publish, Export or Onboard Tableau Content/Users to Server")
 
-# Mode selection - Switch between Upload and Download
-mode = st.radio("Choose an option", ("Upload", "Download"))
+# Mode selection - Switch between Upload, Download, and Onboard Users
+mode = st.radio("Choose an option", ("Upload", "Download", "Onboard Users"))
 
 # Authentication method selection (radio button)
 auth_method = st.radio("Select Authentication Method", ("Username/Password", "Personal Access Token (PAT)"))
@@ -25,7 +25,7 @@ else:
 server_url = st.text_input("Enter your Tableau server URL", "https://your-tableau-server.com")
 site = st.text_input("Enter your site name (leave empty for default)", "")
 
-# Switch between Upload and Download options
+# Switch between Upload, Download, and Onboard Users
 if mode == "Upload":
     st.subheader("Upload Tableau Content to Server")
 
@@ -156,3 +156,50 @@ elif mode == "Download":
 
         except Exception as e:
             st.error(f"An error occurred while exporting: {e}")
+
+elif mode == "Onboard Users":
+    st.subheader("Onboard Users from CSV to Tableau Server")
+
+    # Upload CSV for onboarding users
+    uploaded_csv = st.file_uploader("Upload a CSV file with user details (username, email, role)", type=["csv"])
+
+    if uploaded_csv:
+        st.write("CSV uploaded successfully!")
+
+        # When the user clicks 'Onboard Users'
+        if st.button("Onboard Users to Tableau Server"):
+            if not server_url:
+                st.error("Please enter the Tableau server URL.")
+            else:
+                try:
+                    # Read the CSV and onboard users
+                    user_data = pd.read_csv(uploaded_csv)
+
+                    if "username" not in user_data.columns or "email" not in user_data.columns or "role" not in user_data.columns:
+                        st.error("CSV must contain 'username', 'email', and 'role' columns.")
+                    else:
+                        # Authenticate again if needed
+                        if auth_method == "Username/Password":
+                            if not username or not password:
+                                st.error("Please provide both username and password.")
+                            else:
+                                tableau_auth = TSC.TableauAuth(username, password, site=site)
+                        else:
+                            if not token_name or not token_value:
+                                st.error("Please provide both token name and token value.")
+                            else:
+                                tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site=site)
+
+                        # Authenticate with Tableau Server
+                        with server.auth.sign_in(tableau_auth):
+                            # Onboard each user
+                            for _, row in user_data.iterrows():
+                                try:
+                                    user = TSC.UserItem(row['username'], row['role'], row['email'])
+                                    server.users.add(user)
+                                    st.success(f"User {row['username']} onboarded successfully.")
+                                except Exception as e:
+                                    st.error(f"Failed to onboard {row['username']}: {e}")
+
+                except Exception as e:
+                    st.error(f"An error occurred while onboarding users: {e}")
