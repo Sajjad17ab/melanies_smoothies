@@ -33,6 +33,23 @@ if st.button("Test Login"):
             st.write(f"Tableau Build Number: {server_info.build_number}")
             st.write(f"REST API Version: {server_info.rest_api_version}")
 
+            # Fetch and display available workbooks
+            workbooks, pagination_item = server_connection.workbooks.get()
+            st.write(f"Total workbooks available: {pagination_item.total_available}")
+            
+            # List workbooks available
+            workbook_names = [workbook.name for workbook in workbooks]
+            st.write("Workbooks available on the server:")
+            st.write(workbook_names)
+
+            # Fetch and display available views (from the first workbook for example)
+            if workbooks:
+                workbook = workbooks[0]
+                server_connection.workbooks.populate_views(workbook)
+                view_names = [view.name for view in workbook.views]
+                st.write(f"Views in the first workbook '{workbook.name}':")
+                st.write(view_names)
+
     except TSC.ServerResponseError as e:
         st.error(f"Server response error: {str(e)}")
     except Exception as e:
