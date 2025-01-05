@@ -10,8 +10,8 @@ token_name = st.text_input("Enter your Tableau Personal Access Token (PAT) name"
 token_value = st.text_input("Enter your Tableau Personal Access Token (PAT) value", type="password")
 site = st.text_input("Enter your Tableau site name (leave empty for default)", "")
 
-# Tableau Online server URL
-server_url = st.text_input("Enter your Tableau Online server URL", "https://your-tableau-online-site.online.tableau.com")
+# Tableau Online server URL (use your actual Tableau Online site URL here)
+server_url = st.text_input("Enter your Tableau Online server URL", "https://<your-site-name>.online.tableau.com")  # Update this
 
 # Button to trigger login
 if st.button("Login to Tableau Online"):
@@ -27,7 +27,7 @@ if st.button("Login to Tableau Online"):
                 "name": token_name,
                 "password": token_value,
                 "site": {
-                    "contentUrl": site if site else ""
+                    "contentUrl": site if site else ""  # Leave empty for default site
                 }
             }
         }
