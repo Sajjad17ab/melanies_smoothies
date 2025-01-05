@@ -1,25 +1,25 @@
 import streamlit as st
 import requests
+import json
 
-# Streamlit title
-st.title("Tableau Cloud Login with Personal Access Token (PAT)")
+# Title of the Streamlit app
+st.title("Tableau Cloud Login")
 
-# User input for Tableau Cloud credentials
-st.subheader("Enter Tableau Cloud Credentials")
+# User input fields for Tableau Authentication (PAT)
+st.subheader("Authentication to Tableau Cloud")
 
-# Tableau Personal Access Token (PAT) details input
+# Input for Tableau Cloud credentials
 token_name = st.text_input("Enter your Tableau Personal Access Token (PAT) Name")
 token_value = st.text_input("Enter your Tableau Personal Access Token (PAT) Value", type="password")
-site = st.text_input("Enter your Tableau Site Name (leave empty for default site)", "")
+site = st.text_input("Enter your Tableau Site Name (leave empty for default)", "")
 
-# Tableau Cloud URL input
+# Input for Tableau Cloud URL
 cloud_url = st.text_input("Enter your Tableau Cloud URL (e.g., https://10ay.online.tableau.com)", "")
 
-# API version
-api_version = "3.10"  # You can change the version if needed
-auth_url = f"{cloud_url}/api/{api_version}/auth/signin"
+# Authentication API URL
+auth_url = f"{cloud_url}/api/3.10/auth/signin"
 
-# Function to authenticate user to Tableau Cloud
+# Function to authenticate to Tableau Cloud
 def authenticate_to_tableau():
     payload = {
         "credentials": {
@@ -38,6 +38,10 @@ def authenticate_to_tableau():
     try:
         # Send POST request to authenticate
         response = requests.post(auth_url, json=payload, headers=headers)
+
+        # Debugging: print the response content
+        st.write(f"Response Status Code: {response.status_code}")
+        st.write(f"Response Content: {response.text}")
 
         if response.status_code == 200:
             st.success("Login successful!")
@@ -61,7 +65,10 @@ def authenticate_to_tableau():
 
 # Button to trigger the login
 if st.button("Login to Tableau Cloud"):
+    # Check if required fields are provided
     if token_name and token_value and cloud_url:
-        authenticate_to_tableau()
+        token = authenticate_to_tableau()
+        if token:
+            st.success("You are successfully authenticated with Tableau Cloud.")
     else:
-        st.error("Please fill in all required fields.")
+        st.error("Please enter all required fields: PAT Name, PAT Value, and Tableau Cloud URL.")
