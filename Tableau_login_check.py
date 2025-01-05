@@ -15,8 +15,8 @@ server_url = st.text_input("Enter your Tableau Cloud server URL", "https://your-
 # Button to trigger login
 if st.button("Login to Tableau Cloud"):
     try:
-        # Authenticate using Tableau Cloud Personal Access Token (PAT)
-        tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site=site)
+        # Create authentication object using PersonalAccessTokenAuth
+        tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site=site if site else None)
         server = TSC.Server(server_url, use_server_version=True)
 
         # Attempt login
