@@ -51,4 +51,15 @@ if st.button("Login to Tableau Cloud"):
             else:
                 # Try to parse the response JSON
                 response_data = response.json()
-              
+                if "credentials" in response_data:
+                    st.success("Login successful!")
+                    # You can extract and display user details here
+                    user = response_data["credentials"]["user"]
+                    st.write(f"Welcome, {user['name']}!")
+                else:
+                    st.error("Unexpected response format: Missing 'credentials' key.")
+                    
+        except requests.exceptions.RequestException as e:
+            st.error(f"An error occurred with the request: {e}")
+        except json.JSONDecodeError:
+            st.error("Failed to parse the response as JSON.")
