@@ -43,9 +43,23 @@ def authenticate_to_tableau():
         st.write(f"Response Status Code: {response.status_code}")
         st.write(f"Response Content: {response.text}")
 
-        if response.status_code == 200:
-            st.success("Login successful!")
+        # If the response is empty or not valid JSON
+        if response.status_code != 200:
+            st.error(f"Login failed! Status code: {response.status_code}")
+            st.write(f"Response Text: {response.text}")
+            return None
+
+        # Try to parse the response content as JSON
+        try:
             response_data = response.json()
+        except json.JSONDecodeError:
+            st.error("Response could not be parsed as JSON.")
+            st.write(f"Raw response: {response.text}")
+            return None
+
+        # Check if the response contains valid authentication token
+        if "credentials" in response_data and "token" in response_data["credentials"]:
+            st.success("Login successful!")
             token = response_data["credentials"]["token"]
             site_name = response_data["credentials"]["site"]["contentUrl"]
             user_name = response_data["credentials"]["user"]["name"]
@@ -56,12 +70,12 @@ def authenticate_to_tableau():
 
             return token  # Return token for further API calls
         else:
-            st.error(f"Login failed! Status code: {response.status_code}")
-            error_message = response.json().get("error", {}).get("detail", "Unknown error")
-            st.write(f"Error: {error_message}")
+            st.error(f"Unexpected response structure. Response: {response_data}")
+            return None
 
     except requests.exceptions.RequestException as e:
         st.error(f"An error occurred while authenticating: {e}")
+        return None
 
 # Button to trigger the login
 if st.button("Login to Tableau Cloud"):
