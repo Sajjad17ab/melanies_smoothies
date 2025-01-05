@@ -26,7 +26,7 @@ def authenticate_to_tableau():
             "name": token_name,
             "password": token_value,
             "site": {
-                "contentUrl": site
+                "contentUrl": site if site else ""
             }
         }
     }
