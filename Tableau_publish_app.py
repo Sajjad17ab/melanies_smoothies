@@ -24,10 +24,44 @@ else:
 server_url = st.text_input("Enter your Tableau Cloud URL", "https://your-tableau-cloud.com")
 site = st.text_input("Enter your site name (leave empty for default)", "")
 
+# Button to check connection
+if st.button("Check Connection to Tableau Cloud"):
+    if not server_url:
+        st.error("Please enter the Tableau Cloud URL first.")
+    else:
+        try:
+            # Create authentication object based on selected method
+            if auth_method == "Username/Password":
+                if not username or not password:
+                    st.error("Please provide both username and password.")
+                else:
+                    tableau_auth = TSC.TableauAuth(username, password)
+            else:
+                if not token_name or not token_value:
+                    st.error("Please provide both token name and token value.")
+                else:
+                    tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value)
+
+            # Create server object and authenticate
+            server = TSC.Server(server_url, use_server_version=True)
+
+            # Authenticate
+            with server.auth.sign_in(tableau_auth, site=site):  # Passing 'site' here
+                # Verification: Fetch a list of projects to check the connection
+                all_projects, _ = server.projects.get()
+                
+                if all_projects:
+                    st.success("Successfully connected to Tableau Cloud!")
+                else:
+                    st.error("Connection to Tableau Cloud failed. No projects found.")
+
+        except Exception as e:
+            st.error(f"An error occurred: {e}")
+
 # Switch between Upload and Download options
 mode = st.radio("Choose an option", ("Upload", "Download"))
 
-# Upload functionality
+# Upload functionality (this is only accessible if the connection is successful)
 if mode == "Upload":
     st.subheader("Upload Tableau Content to Cloud")
 
@@ -64,15 +98,8 @@ if mode == "Upload":
 
                     # Authenticate
                     with server.auth.sign_in(tableau_auth, site=site):  # Passing 'site' here
-                        # Verification: Fetch a list of projects to check the connection
-                        all_projects, _ = server.projects.get()
-                        
-                        if all_projects:
-                            st.success("Successfully connected to Tableau Cloud!")
-                        else:
-                            st.error("Connection to Tableau Cloud failed. No projects found.")
-
                         # Find the project by name
+                        all_projects, _ = server.projects.get()
                         project = next((proj for proj in all_projects if proj.name == project_name), None)
 
                         if project is None:
@@ -114,7 +141,7 @@ if mode == "Upload":
                 except Exception as e:
                     st.error(f"An error occurred: {e}")
 
-# Download functionality
+# Download functionality (this is only accessible if the connection is successful)
 elif mode == "Download":
     st.subheader("Export All Content Names and Owners to CSV")
 
