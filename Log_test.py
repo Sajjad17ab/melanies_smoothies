@@ -1,41 +1,50 @@
-import requests
-import json
+import streamlit as st
+import tableauserverclient as TSC
 
-# Tableau Cloud login credentials
-username = 'your_username'
-password = 'your_password'
-site = 'your_site_name'  # Can be left empty for the default site
-tableau_server_url = 'https://10ay.online.tableau.com'  # Modify according to your region
+# Function to sign in and get server information
+def login_to_tableau(username, password, site_name=""):
+    try:
+        # Set the server URL for Tableau Cloud (replace with your region if needed)
+        server_url = "https://10ax.online.tableau.com"
+        
+        # Create the Tableau Server Client instance
+        server = TSC.Server(server_url)
+        
+        # Create authentication credentials
+        tableau_auth = TSC.TableauAuth(username, password, site=site_name)
+        
+        # Sign in to the server
+        with server.auth.sign_in(tableau_auth):
+            server_info = server.server_info
+            return f"Successfully logged in to Tableau Cloud at: {server_info.baseurl}", server_info
+    except Exception as e:
+        return f"Error: {e}", None
 
-# API endpoint for Tableau authentication
-auth_url = f"{tableau_server_url}/api/3.10/auth/signin"
+# Streamlit interface
+def main():
+    st.title("Tableau Cloud Login")
+    st.write("Enter your Tableau Cloud credentials to log in.")
 
-# Request payload for authentication
-payload = {
-    "credentials": {
-        "name": username,
-        "password": password,
-        "site": {
-            "contentUrl": site
-        }
-    }
-}
+    # User inputs for credentials
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+    site_name = st.text_input("Site Name (Leave empty for default)")
 
-# Headers for API request
-headers = {
-    "Content-Type": "application/json"
-}
+    # Button to initiate login
+    if st.button("Login"):
+        if username and password:
+            st.write("Attempting to log in...")
+            result, server_info = login_to_tableau(username, password, site_name)
 
-# Make POST request to authenticate
-response = requests.post(auth_url, json=payload, headers=headers)
+            if "Error" in result:
+                st.error(result)
+            else:
+                st.success(result)
+                st.write("Server Information:")
+                st.json(server_info.__dict__)  # Display the server info in JSON format
+        else:
+            st.warning("Please enter both username and password.")
 
-# Check if authentication was successful
-if response.status_code == 200:
-    auth_token = response.json()['credentials']['token']
-    site_id = response.json()['credentials']['site']['id']
-    print("Successfully authenticated!")
-    print(f"Auth Token: {auth_token}")
-    print(f"Site ID: {site_id}")
-else:
-    print("Authentication failed!")
-    print(f"Error: {response.text}")
+# Run the app
+if __name__ == "__main__":
+    main()
