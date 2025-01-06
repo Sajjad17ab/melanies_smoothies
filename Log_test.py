@@ -2,7 +2,7 @@ import streamlit as st
 import tableauserverclient as TSC
 
 # Function to sign in to Tableau Cloud and get server information
-def login_to_tableau(username, password, site_name=""):
+def login_to_tableau(username, token, site_name=""):
     try:
         # Set the server URL for Tableau Cloud (modify for your region if needed)
         server_url = "https://10ax.online.tableau.com"  # Modify as needed
@@ -11,7 +11,7 @@ def login_to_tableau(username, password, site_name=""):
         server = TSC.Server(server_url)
         
         # Set up Tableau authentication using the provided credentials
-        tableau_auth = TSC.TableauAuth(username, password, site=site_name)
+        tableau_auth = TSC.TableauAuth(username, token, site=site_name)
         
         # Sign in to Tableau Cloud
         with server.auth.sign_in(tableau_auth):
@@ -24,18 +24,18 @@ def login_to_tableau(username, password, site_name=""):
 def main():
     # Title and description
     st.title("Tableau Cloud Login")
-    st.write("Enter your Tableau Cloud credentials to log in and view server information.")
+    st.write("Enter your Tableau Cloud credentials (email and PAT) to log in and view server information.")
     
-    # User input for credentials
-    username = st.text_input("Username", "")
-    password = st.text_input("Password", type="password")
+    # User input for credentials (email and PAT token for login)
+    username = st.text_input("Email (Username)", "")
+    token = st.text_input("Personal Access Token", type="password")
     site_name = st.text_input("Site Name (Leave empty for default)", "")
 
     # Button to attempt login
     if st.button("Login"):
-        if username and password:
+        if username and token:
             st.write("Attempting to log in...")
-            result, server_info = login_to_tableau(username, password, site_name)
+            result, server_info = login_to_tableau(username, token, site_name)
             
             # Display result
             if "Error" in result:
@@ -46,7 +46,7 @@ def main():
                 st.json(server_info.__dict__)  # Display the server info as JSON
                 
         else:
-            st.warning("Please enter both username and password.")  # Show a warning if credentials are missing
+            st.warning("Please enter both email and PAT token.")  # Show a warning if credentials are missing
 
 # Run the app
 if __name__ == "__main__":
