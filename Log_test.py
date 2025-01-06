@@ -2,7 +2,7 @@ import tableauserverclient as TSC
 
 def main():
     # This is the domain for Tableau's Developer Program (replace with your Tableau Cloud URL)
-    server_url = "https://10ax.online.tableau.com"  # Modify the server URL if needed for your region
+    server_url = "https://sso.online.tableau.com/public/login"  # Modify the server URL if needed for your region
     
     # Tableau credentials (replace with your actual username, password, and site name)
     username = "your_username"  # Replace with your Tableau username
