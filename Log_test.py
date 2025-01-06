@@ -5,7 +5,7 @@ import tableauserverclient as TSC
 def login_to_tableau(username, password, site_name=""):
     try:
         # Set the server URL for Tableau Cloud (replace with your region if needed)
-        server_url = "https://10ax.online.tableau.com"
+        server_url = "https://prod-apnortheast-a.online.tableau.com/#/site/mohdsajjadsheikh-8334074aaa/home"
         
         # Create the Tableau Server Client instance
         server = TSC.Server(server_url)
