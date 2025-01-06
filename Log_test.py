@@ -1,63 +1,41 @@
-import streamlit as st
-import tableauserverclient as TSC
+import requests
+import json
 
-# Streamlit UI
-st.title("Tableau Login Test - Detailed Information")
+# Tableau Cloud login credentials
+username = 'your_username'
+password = 'your_password'
+site = 'your_site_name'  # Can be left empty for the default site
+tableau_server_url = 'https://10ay.online.tableau.com'  # Modify according to your region
 
-# Input fields for server details
-server = st.text_input("Server address")
-site = st.text_input("Site name")
-token_name = st.text_input("Personal Access Token name")
-token_value = st.text_input("Personal Access Token value", type="password")
+# API endpoint for Tableau authentication
+auth_url = f"{tableau_server_url}/api/3.10/auth/signin"
 
-# Action button to trigger the login test
-if st.button("Test Login"):
-    # Tableau Authentication
-    tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site)
-    server_connection = TSC.Server(server, use_server_version=True, http_options={"verify": False})
+# Request payload for authentication
+payload = {
+    "credentials": {
+        "name": username,
+        "password": password,
+        "site": {
+            "contentUrl": site
+        }
+    }
+}
 
-    try:
-        # Attempt to sign in
-        with server_connection.auth.sign_in(tableau_auth):
-            st.write("Connected to Tableau Server successfully!")
+# Headers for API request
+headers = {
+    "Content-Type": "application/json"
+}
 
-            # Display authentication details
-            st.write(f"Authenticated with site: {site}")
-            st.write(f"Using token: {token_name}")
+# Make POST request to authenticate
+response = requests.post(auth_url, json=payload, headers=headers)
 
-            # Get and display the server information
-            try:
-                server_info = server_connection.server_info
-
-                # Check if the version is available
-                product_version = getattr(server_info, 'product_version', 'Unknown Version')
-                build_number = getattr(server_info, 'build_number', 'Unknown Build')
-                rest_api_version = getattr(server_info, 'rest_api_version', 'Unknown API Version')
-
-                st.write(f"Tableau Product Version: {product_version}")
-                st.write(f"Tableau Build Number: {build_number}")
-                st.write(f"REST API Version: {rest_api_version}")
-            except Exception as e:
-                st.error(f"Failed to retrieve server info: {str(e)}")
-
-            # Fetch and display available workbooks
-            workbooks, pagination_item = server_connection.workbooks.get()
-            st.write(f"Total workbooks available: {pagination_item.total_available}")
-            
-            # List workbooks available
-            workbook_names = [workbook.name for workbook in workbooks]
-            st.write("Workbooks available on the server:")
-            st.write(workbook_names)
-
-            # Fetch and display available views (from the first workbook for example)
-            if workbooks:
-                workbook = workbooks[0]
-                server_connection.workbooks.populate_views(workbook)
-                view_names = [view.name for view in workbook.views]
-                st.write(f"Views in the first workbook '{workbook.name}':")
-                st.write(view_names)
-
-    except TSC.ServerResponseError as e:
-        st.error(f"Server response error: {str(e)}")
-    except Exception as e:
-        st.error(f"An error occurred: {str(e)}")
+# Check if authentication was successful
+if response.status_code == 200:
+    auth_token = response.json()['credentials']['token']
+    site_id = response.json()['credentials']['site']['id']
+    print("Successfully authenticated!")
+    print(f"Auth Token: {auth_token}")
+    print(f"Site ID: {site_id}")
+else:
+    print("Authentication failed!")
+    print(f"Error: {response.text}")
