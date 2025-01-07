@@ -1,9 +1,6 @@
 import streamlit as st
 import tableauserverclient as TSC
 import pandas as pd
-from io import BytesIO
-import os
-
 
 # Streamlit UI for user credentials input
 st.title("Tableau Dashboard with Personal Access Token (PAT)")
@@ -41,16 +38,16 @@ def fetch_all_content():
             # Create an empty list to hold views and their associated workbooks
             views_data = []
             for view in all_views:
-                # Get the workbook for this view using the workbook_id
-                workbook_id = view.workbook.id if view.workbook else None
+                # Get the workbook ID for this view
+                workbook_id = view.workbook.id if hasattr(view, 'workbook') else None
+                workbook_name = "Unknown"
+                workbook_project = "Unknown"
+                
                 if workbook_id:
                     # Fetch the workbook by ID to get the name and project
                     workbook = server.workbooks.get_by_id(workbook_id)
                     workbook_name = workbook.name
                     workbook_project = workbook.project_name
-                else:
-                    workbook_name = "Unknown"
-                    workbook_project = "Unknown"
                 
                 # Append view information along with its workbook info
                 views_data.append((view.id, view.name, workbook_name, workbook_project))
