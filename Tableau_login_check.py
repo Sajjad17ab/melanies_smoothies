@@ -14,7 +14,7 @@ server_url = st.text_input("Enter Tableau Server URL", value="https://prod-apnor
 
 # Button to trigger the connection
 if st.button("Connect to Tableau"):
-    if token_name and token_value and site_id and server_url:
+    if token_name and token_value and server_url:
         try:
             # Tableau authentication using Personal Access Token (PAT)
             tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site_id)
@@ -69,6 +69,42 @@ if st.button("Connect to Tableau"):
                     file_name="tableau_data.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
+
+                # Create a project through the Streamlit UI
+                create_project_radio = st.radio("Create New Project", ("No", "Yes"))
+
+                if create_project_radio == "Yes":
+                    project_name = st.text_input("Enter the Project Name")
+                    project_description = st.text_area("Enter Project Description")
+
+                    if st.button("Create Project"):
+                        if project_name and project_description:
+                            try:
+                                # Create a project on Tableau Server
+                                top_level_project = TSC.ProjectItem(
+                                    name=project_name,
+                                    description=project_description,
+                                    content_permissions=None,
+                                    parent_id=None,
+                                    samples=True,
+                                )
+
+                                # Creating the project
+                                created_project = server.projects.create(top_level_project)
+                                st.success(f"Project '{created_project.name}' created successfully!")
+
+                                # Optionally, create nested projects (Child, Grandchild)
+                                child_project = TSC.ProjectItem(name="Child Project", parent_id=created_project.id)
+                                child_project = server.projects.create(child_project)
+                                grand_child_project = TSC.ProjectItem(name="Grand Child Project", parent_id=child_project.id)
+                                grand_child_project = server.projects.create(grand_child_project)
+                                
+                                st.success("Child and Grandchild projects created successfully!")
+
+                            except Exception as e:
+                                st.error(f"An error occurred while creating the project: {e}")
+                        else:
+                            st.error("Please provide both project name and description.")
 
         except Exception as e:
             st.error(f"An error occurred while connecting to Tableau: {e}")
