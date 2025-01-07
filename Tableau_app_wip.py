@@ -54,7 +54,7 @@ elif option == "Download Workbook":
     workbook_id = st.text_input("Enter the workbook ID to download")
     
     # Button to trigger the workbook download
-    if st.button("Download Workbook"):
+    if st.button("Download Workbook to Local Machine"):
         if workbook_id:
             try:
                 # Tableau authentication using Personal Access Token (PAT)
@@ -74,7 +74,7 @@ elif option == "Download Workbook":
 
                     # Offer the workbook as a downloadable file
                     st.download_button(
-                        label="Download Workbook",
+                        label="Download Workbook Now",
                         data=file_data,
                         file_name=f"{workbook.name}.twbx",
                         mime="application/octet-stream"
@@ -85,6 +85,9 @@ elif option == "Download Workbook":
                 st.error(f"An error occurred while downloading the workbook: {e}")
         else:
             st.error("Please provide the workbook ID to download.")
+
+# Additional options for creating projects, publishing workbooks, etc., go here.
+# The rest of your code remains unchanged
 
 # Additional options for creating projects, publishing workbooks, etc., go here.
 # The rest of your code remains unchanged
