@@ -3,7 +3,6 @@ import tableauserverclient as TSC
 import pandas as pd
 from io import BytesIO
 import os
-from tableauserverclient import ServerResponseError
 
 
 # Streamlit UI for user credentials input
@@ -39,14 +38,19 @@ def fetch_all_content():
             # Fetch views
             all_views, _ = server.views.get()
 
-            # Fetch workbook details for each view
+            # Create an empty list to hold views and their associated workbooks
             views_data = []
             for view in all_views:
-                server.views.populate(view)  # Populate workbook information for the view
-                workbook_name = "Unknown"
+                # Get the workbook for this view
                 if view.workbook:
-                    workbook_name = view.workbook.name  # Ensure workbook is fetched for each view
-                views_data.append((view.id, view.name, workbook_name, view.project_name))
+                    workbook_name = view.workbook.name
+                    workbook_project = view.workbook.project_name
+                else:
+                    workbook_name = "Unknown"
+                    workbook_project = "Unknown"
+                
+                # Append view information along with its workbook info
+                views_data.append((view.id, view.name, workbook_name, workbook_project))
 
             # Combine all content into a dictionary to display
             workbooks_data = [(workbook.id, workbook.name, workbook.project_name, workbook.size) for workbook in all_workbooks]
