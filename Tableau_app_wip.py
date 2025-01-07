@@ -174,7 +174,7 @@ elif option == "Publish Workbook":
 
                     if not project:
                         st.error(f"Project '{project_name}' not found.")
-                        return
+                        return  # This was the problematic return, replaced by st.error below
 
                     # Publish workbook
                     new_workbook = TSC.WorkbookItem(project.id, name=workbook_file.name)
