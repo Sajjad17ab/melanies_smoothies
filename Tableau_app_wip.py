@@ -66,15 +66,18 @@ elif option == "Download Workbook":
                     # Get the workbook by ID
                     workbook = server.workbooks.get_by_id(workbook_id)
                     
-                    # Define a path where to save the workbook (can be adjusted as per requirement)
-                    save_path = f"/tmp/{workbook.name}.twbx"  # Save the workbook as a .twbx file
+                    # Download the workbook into memory as a binary stream
+                    with server.workbooks.download(workbook.id) as file:
+                        file_data = file.read()
 
-                    # Download the workbook
-                    server.workbooks.download(workbook.id, filepath=save_path)
-
-                    # Inform the user that the download was successful
-                    st.success(f"Workbook '{workbook.name}' downloaded successfully!")
-                    st.write(f"File saved at: {save_path}")
+                    # Offer the workbook as a downloadable file
+                    st.download_button(
+                        label="Download Workbook",
+                        data=file_data,
+                        file_name=f"{workbook.name}.twbx",
+                        mime="application/octet-stream"
+                    )
+                    st.success(f"Workbook '{workbook.name}' is ready for download!")
 
             except Exception as e:
                 st.error(f"An error occurred while downloading the workbook: {e}")
@@ -82,4 +85,4 @@ elif option == "Download Workbook":
             st.error("Please provide the workbook ID to download.")
 
 # Additional options for creating projects, publishing workbooks, etc., go here.
-# (The rest of your code remains unchanged)
+# The rest of your code remains unchanged
