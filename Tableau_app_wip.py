@@ -37,12 +37,12 @@ if st.button("Get All Workbook Details"):
                     # Retrieve the project name by looking up project_id in the project dictionary
                     project_name = project_dict.get(workbook.project_id, "N/A")
 
-                    # Get views associated with the workbook
-                    server.views.populate(workbook)
+                    # Retrieve workbook views using the server.views.get method
+                    server.views.populate(workbook)  # Populate workbook views
                     views = workbook.views
 
-                    # Get data sources associated with the workbook
-                    server.datasources.populate(workbook)
+                    # Retrieve workbook datasources using the server.datasources.get method
+                    server.datasources.populate(workbook)  # Populate workbook datasources
                     datasources = workbook.datasources
 
                     # Extract workbook details
