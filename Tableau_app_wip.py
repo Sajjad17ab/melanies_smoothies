@@ -66,9 +66,11 @@ elif option == "Download Workbook":
                     # Get the workbook by ID
                     workbook = server.workbooks.get_by_id(workbook_id)
                     
-                    # Download the workbook into memory as a binary stream
-                    with server.workbooks.download(workbook.id) as file:
-                        file_data = file.read()
+                    # Define a path where to save the workbook (can be adjusted as per requirement)
+                    save_path = f"/tmp/{workbook.name}.twbx"  # Save the workbook as a .twbx file
+
+                    # Download the workbook
+                    file_data = server.workbooks.download(workbook.id)
 
                     # Offer the workbook as a downloadable file
                     st.download_button(
