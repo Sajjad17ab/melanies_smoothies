@@ -41,10 +41,13 @@ def fetch_all_content():
             # Create an empty list to hold views and their associated workbooks
             views_data = []
             for view in all_views:
-                # Get the workbook for this view
-                if view.workbook:
-                    workbook_name = view.workbook.name
-                    workbook_project = view.workbook.project_name
+                # Get the workbook for this view using the workbook_id
+                workbook_id = view.workbook.id if view.workbook else None
+                if workbook_id:
+                    # Fetch the workbook by ID to get the name and project
+                    workbook = server.workbooks.get_by_id(workbook_id)
+                    workbook_name = workbook.name
+                    workbook_project = workbook.project_name
                 else:
                     workbook_name = "Unknown"
                     workbook_project = "Unknown"
