@@ -2,7 +2,6 @@ import streamlit as st
 import tableauserverclient as TSC
 import pandas as pd
 from io import BytesIO
-import os
 
 # Streamlit UI for user credentials input
 st.title("Tableau Login with Personal Access Token (PAT)")
@@ -70,49 +69,6 @@ if st.button("Connect to Tableau"):
                     file_name="tableau_data.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
-
-                # -----------------------------
-                # File Upload Section for Workbook, Datasource, and Flow
-                st.subheader("Upload Files to Tableau")
-
-                # File upload for Workbook, Datasource, or Flow
-                file = st.file_uploader("Choose a file to upload", type=["twb", "twbx", "tds", "tdsx", "tfl", "tflx"])
-
-                if file is not None:
-                    file_name = file.name
-                    file_extension = file_name.split('.')[-1]
-
-                    # Temporary path to save the uploaded file
-                    temp_file_path = os.path.join("/tmp", file_name)
-
-                    # Save the file to a temporary location
-                    with open(temp_file_path, "wb") as temp_file:
-                        temp_file.write(file.getbuffer())
-
-                    # Check the file type and upload accordingly
-                    if file_extension in ['twb', 'twbx']:  # Workbook file types
-                        # Create a WorkbookItem to upload
-                        new_workbook = TSC.WorkbookItem(name=file_name)
-                        new_workbook = server.workbooks.publish(new_workbook, temp_file_path, TSC.Server.PublishMode.CreateNew)
-                        st.success(f"Workbook '{file_name}' uploaded successfully!")
-                    
-                    elif file_extension in ['tds', 'tdsx']:  # Datasource file types
-                        # Create a DatasourceItem to upload
-                        new_datasource = TSC.DatasourceItem(name=file_name)
-                        new_datasource = server.datasources.publish(new_datasource, temp_file_path, TSC.Server.PublishMode.CreateNew)
-                        st.success(f"Datasource '{file_name}' uploaded successfully!")
-                    
-                    elif file_extension in ['tfl', 'tflx']:  # Flow file types
-                        # Create a FlowItem to upload
-                        new_flow = TSC.FlowItem(name=file_name)
-                        new_flow = server.flows.publish(new_flow, temp_file_path, TSC.Server.PublishMode.CreateNew)
-                        st.success(f"Flow '{file_name}' uploaded successfully!")
-
-                    else:
-                        st.error("Unsupported file type. Please upload a valid Tableau Workbook, Datasource, or Flow file.")
-
-                    # Clean up the temporary file after upload
-                    os.remove(temp_file_path)
 
         except Exception as e:
             st.error(f"An error occurred while connecting to Tableau: {e}")
