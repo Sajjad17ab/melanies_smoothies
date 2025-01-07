@@ -4,20 +4,20 @@ import pandas as pd
 from io import BytesIO
 
 # Streamlit UI for user credentials input
-st.title("Tableau Login")
+st.title("Tableau Login with Personal Access Token (PAT)")
 
-# Get Tableau credentials from the user
-username = st.text_input("Enter your Tableau Username (Email)", type="default")
-password = st.text_input("Enter your Tableau Password", type="password")
+# Get Tableau credentials from the user (PAT)
+token_name = st.text_input("Enter your Tableau Personal Access Token Name")
+token_value = st.text_input("Enter your Tableau Personal Access Token Value", type="password")
 site_id = st.text_input("Enter your Tableau Site ID (Leave blank for default site)", value="")
 server_url = st.text_input("Enter Tableau Server URL", value="https://prod-apnortheast-a.online.tableau.com")
 
 # Button to trigger the connection
 if st.button("Connect to Tableau"):
-    if username and password and site_id and server_url:
+    if token_name and token_value and site_id and server_url:
         try:
-            # Tableau authentication using user-provided credentials
-            tableau_auth = TSC.TableauAuth(username, password, site_id=site_id)
+            # Tableau authentication using Personal Access Token (PAT)
+            tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site_id)
             server = TSC.Server(server_url, use_server_version=True)
 
             # Connect to Tableau Server/Online
