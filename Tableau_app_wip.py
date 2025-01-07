@@ -37,15 +37,13 @@ if st.button("Get All Workbook Details"):
                     # Retrieve the project name by looking up project_id in the project dictionary
                     project_name = project_dict.get(workbook.project_id, "N/A")
 
-                    # Retrieve workbook connections, views, and preview image
+                    # Retrieve workbook connections, views, and other details
                     server.workbooks.populate_connections(workbook)
-                    server.workbooks.populate_preview_image(workbook)
                     server.workbooks.populate_views(workbook)
 
-                    # Extract connections, views, and other details
+                    # Extract connections and views information
                     connections = workbook.connections
                     views = workbook.views
-                    preview_image = workbook.preview_image
 
                     # Extract workbook details
                     workbook_details = {
@@ -65,13 +63,6 @@ if st.button("Get All Workbook Details"):
                     # Add connections and views information
                     workbook_details["Connections"] = ", ".join([f"{conn.server_address}" for conn in connections])
                     workbook_details["Views"] = ", ".join([view.name for view in views])
-
-                    # Add the preview image (show image if available, or set 'N/A' if not)
-                    if preview_image:
-                        image_data = BytesIO(preview_image)
-                        workbook_details["Preview Image"] = st.image(image_data, caption="Preview Image", use_column_width=True)
-                    else:
-                        workbook_details["Preview Image"] = "N/A"
 
                     workbooks_data.append(workbook_details)
 
