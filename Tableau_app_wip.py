@@ -169,13 +169,16 @@ elif option == "Publish Workbook":
 
                 # Connect to Tableau Server/Online
                 with server.auth.sign_in(tableau_auth):
-                    # Fetch the project by name
-                    project = server.projects.get_by_name(project_name)
+                    # Fetch all projects
+                    all_projects, _ = server.projects.get()
+
+                    # Find the project by name
+                    project = next((proj for proj in all_projects if proj.name == project_name), None)
 
                     if project is None:
                         st.error(f"Project '{project_name}' not found.")
                     else:
-                        # Publish workbook
+                        # Publish workbook to the found project
                         new_workbook = TSC.WorkbookItem(project.id, name=workbook_file.name)
                         new_workbook = server.workbooks.publish(new_workbook, workbook_file, TSC.Server.PublishMode.Overwrite)
                     
@@ -184,7 +187,6 @@ elif option == "Publish Workbook":
                 st.error(f"An error occurred while publishing the workbook: {e}")
         else:
             st.error("Please upload a workbook file and provide a project name.")
-
 # If the user selects "Create Project"
 elif option == "Create Project":
     project_name = st.text_input("Enter the new project name")
