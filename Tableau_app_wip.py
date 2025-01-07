@@ -39,6 +39,10 @@ def fetch_all_content():
             # Fetch views
             all_views, _ = server.views.get()
 
+            # Populate workbook information for each view
+            for view in all_views:
+                server.views.populate(view)
+
             # Combine all content into a dictionary to display
             workbooks_data = [(workbook.id, workbook.name, workbook.project_name, workbook.size) for workbook in all_workbooks]
             datasources_data = [(datasource.id, datasource.name, datasource.project_name, datasource.size) for datasource in all_datasources]
