@@ -1,7 +1,9 @@
 import streamlit as st
 import tableauserverclient as TSC
+import pandas as pd
+from io import BytesIO
 
-# Set up connection.
+# Set up the Tableau connection using secrets
 tableau_auth = TSC.PersonalAccessTokenAuth(
     st.secrets["tableau"]["token_name"],
     st.secrets["tableau"]["personal_access_token"],
@@ -9,26 +11,50 @@ tableau_auth = TSC.PersonalAccessTokenAuth(
 )
 server = TSC.Server(st.secrets["tableau"]["server_url"], use_server_version=True)
 
-# USERNAME = 'xufimail@keemail.me'
-# PASSWORD = 'Merimarzi67@'
-# SITENAME = 'xufimail-786e7560ed'
-# URL = 'https://prod-apnortheast-a.online.tableau.com'
+# Function to convert data to Excel format
+def to_excel(users, datasources, workbooks):
+    # Create pandas DataFrames
+    users_df = pd.DataFrame([user.name for user in users], columns=["User Name"])
+    datasources_df = pd.DataFrame([datasource.name for datasource in datasources], columns=["Datasource Name"])
+    workbooks_df = pd.DataFrame([workbook.name for workbook in workbooks], columns=["Workbook Name"])
 
-# tableau_auth = TSC.TableauAuth('xufimail@keemail.me', 'Merimarzi67@', 'xufimail-786e7560ed')
-# server = TSC.Server('https://prod-apnortheast-a.online.tableau.com')
+    # Create a BytesIO object to save the Excel file in memory
+    output = BytesIO()
+    
+    # Write to an Excel file in memory
+    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+        users_df.to_excel(writer, sheet_name="Users", index=False)
+        datasources_df.to_excel(writer, sheet_name="Datasources", index=False)
+        workbooks_df.to_excel(writer, sheet_name="Workbooks", index=False)
+    
+    # Move to the beginning of the BytesIO object
+    output.seek(0)
+    return output
 
-with server.auth.sign_in(tableau_auth):
-    all_users, pagination_item = server.users.get()
-    st.write(f"\nThere are {pagination_item.total_available} users on site:")
-    st.write([user.name for user in all_users])
+# Connect to Tableau Server/Online
+try:
+    with server.auth.sign_in(tableau_auth):
+        # Get the list of users
+        all_users, pagination_item = server.users.get()
 
-    all_datasources, pagination_item_ds = server.datasources.get()
-    all_workbooks_items, pagination_item_wb = server.workbooks.get()
+        # Get the list of datasources
+        all_datasources, pagination_item_ds = server.datasources.get()
 
-    st.write(f"\nThere are {pagination_item_ds.total_available} datasources on site:")
-    st.write([datasource.name for datasource in all_datasources])
-    st.write([datasource.id for datasource in all_datasources])
+        # Get the list of workbooks
+        all_workbooks_items, pagination_item_wb = server.workbooks.get()
 
-    st.write(f"\nThere are {pagination_item_wb.total_available} workbooks on site:")
-    st.write([workbook.name for workbook in all_workbooks_items])
-    st.write([workbook.id for workbook in all_workbooks_items])
+        # Convert data to Excel
+        excel_file = to_excel(all_users, all_datasources, all_workbooks_items)
+        
+        # Provide a download link for the Excel file
+        st.download_button(
+            label="Download Excel File",
+            data=excel_file,
+            file_name="tableau_data.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
+        st.write(f"There are {pagination_item.total_available} users, {pagination_item_ds.total_available} datasources, and {pagination_item_wb.total_available} workbooks on the site.")
+    
+except Exception as e:
+    st.error(f"An error occurred while connecting to Tableau: {e}")
