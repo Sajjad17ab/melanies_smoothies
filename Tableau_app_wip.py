@@ -165,9 +165,12 @@ elif option == "Download Workbook":
 elif option == "Publish Workbook":
     # Upload file and publish to Tableau
     workbook_file = st.file_uploader("Upload a workbook file (.twbx)", type=["twbx"])
-    
+
+    # Ask for the project name
+    project_name = st.text_input("Enter the project name to publish the workbook to")
+
     if st.button("Publish Workbook"):
-        if workbook_file:
+        if workbook_file and project_name:
             try:
                 # Tableau authentication using Personal Access Token (PAT)
                 tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site_id)
@@ -175,20 +178,22 @@ elif option == "Publish Workbook":
 
                 # Connect to Tableau Server/Online
                 with server.auth.sign_in(tableau_auth):
-                    # Define project to publish the workbook (you can change the project name as needed)
-                    project_name = "default"  # Replace with desired project name
+                    # Fetch the project by name
                     project = server.projects.get_by_name(project_name)
+
+                    if not project:
+                        st.error(f"Project '{project_name}' not found.")
+                        return
 
                     # Publish workbook
                     new_workbook = TSC.WorkbookItem(project.id, name=workbook_file.name)
                     new_workbook = server.workbooks.publish(new_workbook, workbook_file, TSC.Server.PublishMode.Overwrite)
                     
                     st.success(f"Workbook '{workbook_file.name}' published successfully to project '{project_name}'.")
-
             except Exception as e:
                 st.error(f"An error occurred while publishing the workbook: {e}")
         else:
-            st.error("Please upload a workbook file to publish.")
+            st.error("Please upload a workbook file and provide a project name.")
 
 # If the user selects "Create Project"
 elif option == "Create Project":
