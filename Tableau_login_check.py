@@ -15,27 +15,29 @@ try:
     with server.auth.sign_in(tableau_auth):
         # Get the list of users
         all_users, pagination_item = server.users.get()
-        st.write(f"There are {pagination_item.total_available} users on the site:")
-        
-        # Convert user names to a pandas DataFrame
-        users_df = pd.DataFrame([user.name for user in all_users], columns=["User Name"])
-        st.dataframe(users_df)  # Display the users in a table format
 
         # Get the list of datasources
         all_datasources, pagination_item_ds = server.datasources.get()
-        st.write(f"\nThere are {pagination_item_ds.total_available} datasources on the site:")
 
-        # Convert datasource names to a pandas DataFrame
-        datasources_df = pd.DataFrame([datasource.name for datasource in all_datasources], columns=["Datasource Name"])
-        st.dataframe(datasources_df)  # Display the datasources in a table format
-        
         # Get the list of workbooks
         all_workbooks_items, pagination_item_wb = server.workbooks.get()
-        st.write(f"\nThere are {pagination_item_wb.total_available} workbooks on the site:")
 
-        # Convert workbook names to a pandas DataFrame
-        workbooks_df = pd.DataFrame([workbook.name for workbook in all_workbooks_items], columns=["Workbook Name"])
-        st.dataframe(workbooks_df)  # Display the workbooks in a table format
+        # Combine all the data into one DataFrame
+        users_df = pd.DataFrame([user.name for user in all_users], columns=["Name"])
+        users_df["Type"] = "User"
+
+        datasources_df = pd.DataFrame([datasource.name for datasource in all_datasources], columns=["Name"])
+        datasources_df["Type"] = "Datasource"
+
+        workbooks_df = pd.DataFrame([workbook.name for workbook in all_workbooks_items], columns=["Name"])
+        workbooks_df["Type"] = "Workbook"
+
+        # Concatenate all data into one DataFrame
+        combined_df = pd.concat([users_df, datasources_df, workbooks_df], ignore_index=True)
+
+        # Display the combined DataFrame in a table format
+        st.write(f"There are {combined_df.shape[0]} total entries:")
+        st.dataframe(combined_df)  # Display the combined table
 
 except Exception as e:
     st.error(f"An error occurred while connecting to Tableau: {e}")
