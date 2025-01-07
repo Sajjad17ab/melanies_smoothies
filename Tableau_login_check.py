@@ -116,8 +116,7 @@ elif option == "Create Project":
 
 # If the user selects "Publish Workbook"
 elif option == "Publish Workbook":
-    # Ask for workbook details if the user selects "Publish Workbook"
-    workbook_name = st.text_input("Enter the Workbook Name")
+    # Ask for project name if the user selects "Publish Workbook"
     project_name = st.text_input("Enter the project name where the workbook should be published")
 
     # File uploader to upload the workbook file
@@ -125,7 +124,7 @@ elif option == "Publish Workbook":
 
     # Button to publish the workbook
     if st.button("Publish Workbook"):
-        if workbook_name and uploaded_file and project_name:
+        if uploaded_file and project_name:
             try:
                 # Tableau authentication using Personal Access Token (PAT)
                 tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site_id)
@@ -163,7 +162,7 @@ elif option == "Publish Workbook":
                     overwrite_true = TSC.Server.PublishMode.Overwrite
                     new_workbook = TSC.WorkbookItem(
                         project_id=project_id,
-                        name=workbook_name,
+                        name=uploaded_file.name.split('.')[0],  # Use the uploaded file's name as workbook name
                         show_tabs=True
                     )
 
@@ -179,4 +178,4 @@ elif option == "Publish Workbook":
             except Exception as e:
                 st.error(f"An error occurred while publishing the workbook: {e}")
         else:
-            st.error("Please provide workbook name, uploaded file, and project name.")
+            st.error("Please provide the uploaded file and project name.")
