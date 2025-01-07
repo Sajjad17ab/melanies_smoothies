@@ -1,7 +1,7 @@
 import streamlit as st
 import tableauserverclient as TSC
 import pandas as pd
-import io
+from io import BytesIO
 
 # Streamlit UI for user credentials input
 st.title("Tableau Dashboard with Personal Access Token (PAT)")
@@ -80,51 +80,39 @@ if option == "Content Info":
             if workbooks_df is not None:
                 st.write(f"There are {workbooks_df.shape[0]} workbooks on the server:")
                 st.dataframe(workbooks_df)  # Display workbooks in a table
-                
-                # Add download button for workbooks
-                workbooks_csv = workbooks_df.to_csv(index=False)
+                st.write(f"There are {datasources_df.shape[0]} datasources on the server:")
+                st.dataframe(datasources_df)  # Display datasources in a table
+                st.write(f"There are {projects_df.shape[0]} projects on the server:")
+                st.dataframe(projects_df)  # Display projects in a table
+                st.write(f"There are {views_df.shape[0]} views on the server:")
+                st.dataframe(views_df)  # Display views in a table
+
+                # Download buttons for each table
                 st.download_button(
-                    label="Download Workbooks as CSV",
-                    data=workbooks_csv,
+                    label="Download Workbooks Data",
+                    data=workbooks_df.to_csv(index=False).encode(),
                     file_name="workbooks.csv",
                     mime="text/csv"
                 )
-                
-                st.write(f"There are {datasources_df.shape[0]} datasources on the server:")
-                st.dataframe(datasources_df)  # Display datasources in a table
-                
-                # Add download button for datasources
-                datasources_csv = datasources_df.to_csv(index=False)
                 st.download_button(
-                    label="Download Datasources as CSV",
-                    data=datasources_csv,
+                    label="Download Datasources Data",
+                    data=datasources_df.to_csv(index=False).encode(),
                     file_name="datasources.csv",
                     mime="text/csv"
                 )
-                
-                st.write(f"There are {projects_df.shape[0]} projects on the server:")
-                st.dataframe(projects_df)  # Display projects in a table
-                
-                # Add download button for projects
-                projects_csv = projects_df.to_csv(index=False)
                 st.download_button(
-                    label="Download Projects as CSV",
-                    data=projects_csv,
+                    label="Download Projects Data",
+                    data=projects_df.to_csv(index=False).encode(),
                     file_name="projects.csv",
                     mime="text/csv"
                 )
-                
-                st.write(f"There are {views_df.shape[0]} views on the server:")
-                st.dataframe(views_df)  # Display views in a table
-                
-                # Add download button for views
-                views_csv = views_df.to_csv(index=False)
                 st.download_button(
-                    label="Download Views as CSV",
-                    data=views_csv,
+                    label="Download Views Data",
+                    data=views_df.to_csv(index=False).encode(),
                     file_name="views.csv",
                     mime="text/csv"
                 )
+
             else:
                 st.error("Unable to fetch content data.")
 
@@ -216,4 +204,28 @@ elif option == "Create Project":
             except Exception as e:
                 st.error(f"An error occurred while creating the project: {e}")
         else:
-           
+            st.error("Please provide a project name.")
+
+# If the user selects "Create Group"
+elif option == "Create Group":
+    group_name = st.text_input("Enter the new group name")
+
+    if st.button("Create Group"):
+        if group_name:
+            try:
+                # Tableau authentication using Personal Access Token (PAT)
+                tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site_id)
+                server = TSC.Server(server_url, use_server_version=True)
+
+                # Connect to Tableau Server/Online
+                with server.auth.sign_in(tableau_auth):
+                    # Create a new group
+                    new_group = TSC.GroupItem(name=group_name)
+                    new_group = server.groups.create(new_group)
+
+                    st.success(f"Group '{group_name}' created successfully.")
+
+            except Exception as e:
+                st.error(f"An error occurred while creating the group: {e}")
+        else:
+            st.error("Please provide a group name.")
