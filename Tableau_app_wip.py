@@ -24,13 +24,18 @@ if st.button("Get All Workbook Details"):
                 # Get all workbooks from Tableau Server
                 all_workbooks, pagination_item = server.workbooks.get()
 
+                # Get all projects (to match the project_id with the project names)
+                all_projects, _ = server.projects.get()
+
+                # Create a dictionary of projects for faster lookup
+                project_dict = {project.id: project.name for project in all_projects}
+
                 # List to hold details of all workbooks
                 workbooks_data = []
 
                 for workbook in all_workbooks:
-                    # Retrieve the project by project_id using get_by_id
-                    project = server.projects.get_by_id(workbook.project_id)
-                    project_name = project.name if project else "N/A"  # Get the project name
+                    # Retrieve the project name by looking up project_id in the project dictionary
+                    project_name = project_dict.get(workbook.project_id, "N/A")
 
                     # Get views associated with the workbook
                     views, _ = server.views.get(workbook)
