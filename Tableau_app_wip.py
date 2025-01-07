@@ -221,4 +221,15 @@ elif option == "Create Group":
                 tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site_id)
                 server = TSC.Server(server_url, use_server_version=True)
 
-                # Connect
+                # Connect to Tableau Server/Online
+                with server.auth.sign_in(tableau_auth):
+                    # Create a new group
+                    new_group = TSC.GroupItem(name=group_name)
+                    new_group = server.groups.create(new_group)
+
+                    st.success(f"Group '{group_name}' created successfully.")
+
+            except Exception as e:
+                st.error(f"An error occurred while creating the group: {e}")
+        else:
+            st.error("Please provide a group name.")
