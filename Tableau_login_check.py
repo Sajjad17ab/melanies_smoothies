@@ -118,12 +118,14 @@ elif option == "Create Project":
 elif option == "Publish Workbook":
     # Ask for workbook details if the user selects "Publish Workbook"
     workbook_name = st.text_input("Enter the Workbook Name")
-    file_path = st.text_input("Enter the local file path of the workbook")
     project_name = st.text_input("Enter the project name where the workbook should be published")
+
+    # File uploader to upload the workbook file
+    uploaded_file = st.file_uploader("Choose a workbook file", type=["twb", "twbx"])
 
     # Button to publish the workbook
     if st.button("Publish Workbook"):
-        if workbook_name and file_path and project_name:
+        if workbook_name and uploaded_file and project_name:
             try:
                 # Tableau authentication using Personal Access Token (PAT)
                 tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site_id)
@@ -140,7 +142,12 @@ elif option == "Publish Workbook":
                         raise ValueError("The project name is not unique")
                     project_id = projects[0].id
 
-                    # Define connections
+                    # Save the uploaded file to a temporary location
+                    file_path = "/tmp/" + uploaded_file.name
+                    with open(file_path, "wb") as f:
+                        f.write(uploaded_file.getbuffer())
+
+                    # Define connections (example connections for demo purposes)
                     connection1 = TSC.ConnectionItem()
                     connection1.server_address = "mssql.test.com"
                     connection1.connection_credentials = TSC.ConnectionCredentials("test", "password", True)
@@ -172,4 +179,4 @@ elif option == "Publish Workbook":
             except Exception as e:
                 st.error(f"An error occurred while publishing the workbook: {e}")
         else:
-            st.error("Please provide workbook name, file path, and project name.")
+            st.error("Please provide workbook name, uploaded file, and project name.")
