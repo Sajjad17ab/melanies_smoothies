@@ -71,9 +71,10 @@ if st.button("Connect to Tableau"):
                 )
 
                 # Create a project through the Streamlit UI
-                create_project_radio = st.radio("Create New Project", ("No", "Yes"))
+                create_project_radio = st.radio("Do you want to create a new project?", ("No", "Yes"))
 
                 if create_project_radio == "Yes":
+                    # Ask for project name and description if the user selects "Yes"
                     project_name = st.text_input("Enter the Project Name")
                     project_description = st.text_area("Enter Project Description")
 
