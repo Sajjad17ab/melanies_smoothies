@@ -172,15 +172,14 @@ elif option == "Publish Workbook":
                     # Fetch the project by name
                     project = server.projects.get_by_name(project_name)
 
-                    if not project:
+                    if project is None:
                         st.error(f"Project '{project_name}' not found.")
-                        return  # This was the problematic return, replaced by st.error below
-
-                    # Publish workbook
-                    new_workbook = TSC.WorkbookItem(project.id, name=workbook_file.name)
-                    new_workbook = server.workbooks.publish(new_workbook, workbook_file, TSC.Server.PublishMode.Overwrite)
+                    else:
+                        # Publish workbook
+                        new_workbook = TSC.WorkbookItem(project.id, name=workbook_file.name)
+                        new_workbook = server.workbooks.publish(new_workbook, workbook_file, TSC.Server.PublishMode.Overwrite)
                     
-                    st.success(f"Workbook '{workbook_file.name}' published successfully to project '{project_name}'.")
+                        st.success(f"Workbook '{workbook_file.name}' published successfully to project '{project_name}'.")
             except Exception as e:
                 st.error(f"An error occurred while publishing the workbook: {e}")
         else:
