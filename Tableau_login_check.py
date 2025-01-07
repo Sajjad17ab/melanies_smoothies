@@ -4,6 +4,7 @@ import pandas as pd
 from io import BytesIO
 import logging
 
+
 # Streamlit UI for user credentials input
 st.title("Tableau Login with Personal Access Token (PAT)")
 
@@ -14,7 +15,7 @@ site_id = st.text_input("Enter your Tableau Site ID (Leave blank for default sit
 server_url = st.text_input("Enter Tableau Server URL", value="https://prod-apnortheast-a.online.tableau.com")
 
 # Radio button to switch between create project, content info, and publish workbook
-option = st.radio("Select an option:", ("Content Info", "Create Project", "Publish Workbook", "Export View"))
+option = st.radio("Select an option:", ("Content Info", "Create Project", "Publish Workbook"))
 
 # If the user selects "Content Info"
 if option == "Content Info":
@@ -155,6 +156,18 @@ elif option == "Publish Workbook":
                     with open(file_path, "wb") as f:
                         f.write(uploaded_file.getbuffer())
 
+                    # Define connections (example connections for demo purposes)
+                    connection1 = TSC.ConnectionItem()
+                    connection1.server_address = "mssql.test.com"
+                    connection1.connection_credentials = TSC.ConnectionCredentials("test", "password", True)
+
+                    connection2 = TSC.ConnectionItem()
+                    connection2.server_address = "postgres.test.com"
+                    connection2.server_port = "5432"
+                    connection2.connection_credentials = TSC.ConnectionCredentials("test", "password", True)
+
+                    all_connections = [connection1, connection2]
+
                     # Define workbook item
                     overwrite_true = TSC.Server.PublishMode.Overwrite
                     new_workbook = TSC.WorkbookItem(
@@ -167,7 +180,8 @@ elif option == "Publish Workbook":
                     new_workbook = server.workbooks.publish(
                         new_workbook,
                         file_path,
-                        overwrite_true
+                        overwrite_true,
+                        connections=all_connections
                     )
 
                     st.success(f"Workbook '{new_workbook.name}' published successfully!")
@@ -175,55 +189,3 @@ elif option == "Publish Workbook":
                 st.error(f"An error occurred while publishing the workbook: {e}")
         else:
             st.error("Please provide the uploaded file and project name.")
-
-# If the user selects "Export View"
-elif option == "Export View":
-    # Get the view ID from the user
-    view_id = st.text_input("Enter the View ID to export")
-
-    # Choose the file export format (PDF, PNG, CSV)
-    export_type = st.radio("Choose the export format:", ("PDF", "PNG", "CSV"))
-
-    # Button to trigger the export
-    if st.button("Export View"):
-        if view_id:
-            try:
-                # Tableau authentication using Personal Access Token (PAT)
-                tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site_id)
-                server = TSC.Server(server_url, use_server_version=True)
-
-                with server.auth.sign_in(tableau_auth):
-                    # Get the view from Tableau Server by its ID
-                    view = server.views.get_by_id(view_id)
-
-                    # Set export options based on user selection
-                    if export_type == "PDF":
-                        options = TSC.PDFRequestOptions()
-                        options.page_type = TSC.PDFRequestOptions.PageType.A4
-                        options.orientation = TSC.PDFRequestOptions.Orientation.Landscape
-                        export_func = server.views.populate_pdf
-                        extension = "pdf"
-                    elif export_type == "PNG":
-                        options = TSC.ImageRequestOptions()
-                        export_func = server.views.populate_image
-                        extension = "png"
-                    elif export_type == "CSV":
-                        options = TSC.CSVRequestOptions()
-                        export_func = server.views.populate_csv
-                        extension = "csv"
-
-                    # Perform the export
-                    export_func(view, options)
-
-                    # Save the file
-                    filename = f"view_export.{extension}"
-                    with open(filename, "wb") as f:
-                        if export_type == "CSV":
-                            f.writelines(view.csv)
-                        else:
-                            f.write(view.image)
-
-                    st.success(f"View exported successfully as {filename}")
-
-            except Exception as e:
-                st.error(f"An error occurred while exporting the view:
