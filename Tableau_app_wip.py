@@ -39,6 +39,7 @@ if st.button("Get All Workbook Details"):
 
                     # Get the views associated with the workbook
                     views, _ = server.views.get(workbook)
+
                     # Get the datasources associated with the workbook
                     datasources, _ = server.datasources.get(workbook)
 
@@ -54,8 +55,12 @@ if st.button("Get All Workbook Details"):
                         "Description": workbook.description,
                         "Tags": ", ".join(workbook.tags) if workbook.tags else "N/A",
                         "Number of Views": len(views),
-                        "Number of Data Sources": len(datasources)
+                        "Number of Data Sources": len(datasources),
                     }
+
+                    # Add details of views and datasources to the workbook details
+                    workbook_details["Views Details"] = [(view.id, view.name) for view in views]
+                    workbook_details["Datasources Details"] = [(datasource.id, datasource.name) for datasource in datasources]
 
                     workbooks_data.append(workbook_details)
 
