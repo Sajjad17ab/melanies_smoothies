@@ -101,7 +101,7 @@ elif option == "Create Project":
                         description=project_description,
                         content_permissions=None,
                         parent_id=None,
-                        samples=True,
+                        # Removed invalid 'samples' boolean
                     )
 
                     # Create the project
