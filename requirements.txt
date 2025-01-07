@@ -3,5 +3,5 @@ snowflake-snowpark-python
 streamlit
 requests
 pandas
-tableauserverclient
+tableauserverclient == 0.35
 tableau-api-lib
