@@ -223,24 +223,29 @@ elif option == "Create Group":
 
                     # If users CSV file is uploaded, add users to the group
                     if users_file:
-                        filepath = os.path.abspath(users_file.name)
-                        st.write(f"Adding users from file {filepath}:")
-                        added, failed = server.users.create_from_file(filepath)
+                        # Read the CSV file into a pandas DataFrame
+                        df = pd.read_csv(users_file)
 
-                        for user, error in failed:
-                            if error.code == "409017":  # User already exists
-                                user = server.users.filter(name=user.name)[0]
-                                added.append(user)
+                        # Ensure the 'Name' column exists
+                        if 'Name' not in df.columns:
+                            st.error("The uploaded CSV file must contain a 'Name' column.")
+                        else:
+                            st.write(f"Users from uploaded CSV file:")
+                            st.dataframe(df)
 
-                        for user in added:
-                            try:
-                                server.groups.add_user(group, user.id)
-                                st.write(f"User {user.name} added to group {group.name}")
-                            except ServerResponseError as serverError:
-                                if serverError.code == "409011":  # User already in group
-                                    st.write(f"User {user.name} is already a member of group {group.name}")
-                                else:
-                                    raise serverError
+                            # Iterate over the DataFrame and add users
+                            for index, row in df.iterrows():
+                                user_name = row['Name']  # Assuming the column in the CSV is named 'Name'
+                                try:
+                                    user = TSC.UserItem(name=user_name)
+                                    user = server.users.create(user)
+                                    server.groups.add_user(group, user.id)
+                                    st.write(f"User {user_name} added to group {group.name}")
+                                except ServerResponseError as serverError:
+                                    if serverError.code == "409011":  # User already in group
+                                        st.write(f"User {user_name} is already a member of group {group.name}")
+                                    else:
+                                        st.write(f"Error: {serverError}")
 
                     st.success(f"Group '{group_name}' created successfully!")
             except Exception as e:
