@@ -66,8 +66,12 @@ if st.button("Get All Workbook Details"):
                     workbook_details["Connections"] = ", ".join([f"{conn.server_address}" for conn in connections])
                     workbook_details["Views"] = ", ".join([view.name for view in views])
 
-                    # Add the preview image URL (if available)
-                    workbook_details["Preview Image URL"] = preview_image.url if preview_image else "N/A"
+                    # Add the preview image (show image if available, or set 'N/A' if not)
+                    if preview_image:
+                        image_data = BytesIO(preview_image)
+                        workbook_details["Preview Image"] = st.image(image_data, caption="Preview Image", use_column_width=True)
+                    else:
+                        workbook_details["Preview Image"] = "N/A"
 
                     workbooks_data.append(workbook_details)
 
