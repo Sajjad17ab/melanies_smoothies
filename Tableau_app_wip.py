@@ -28,13 +28,9 @@ if st.button("Get All Workbook Details"):
                 workbooks_data = []
 
                 for workbook in all_workbooks:
-                    # Get the project for the workbook (using the project ID)
-                    req_options = TSC.RequestOptions()
-                    req_options.filter.add(
-                        TSC.Filter(TSC.RequestOptions.Field.Id, TSC.RequestOptions.Operator.Equals, workbook.project_id)
-                    )
-                    project = server.projects.get(req_options)
-                    project_name = project[0].name if project else "N/A"  # Get the project name
+                    # Retrieve the project by project_id using get_by_id
+                    project = server.projects.get_by_id(workbook.project_id)
+                    project_name = project.name if project else "N/A"  # Get the project name
 
                     # Get views associated with the workbook
                     views, _ = server.views.get(workbook)
