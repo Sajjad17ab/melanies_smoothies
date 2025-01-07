@@ -5,3 +5,5 @@ requests
 pandas
 tableauserverclient == 0.35
 tableau-api-lib
+pandas==1.5.3
+openpyxl==3.0.10
