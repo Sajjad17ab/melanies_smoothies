@@ -1,7 +1,7 @@
 import streamlit as st
 import tableauserverclient as TSC
 import pandas as pd
-from io import StringIO
+import io
 
 # Streamlit UI for user credentials input
 st.title("Tableau Dashboard with Personal Access Token (PAT)")
@@ -70,7 +70,6 @@ def fetch_all_content():
         st.error(f"An error occurred while retrieving content: {e}")
         return None, None, None, None
 
-
 # If the user selects "Content Info"
 if option == "Content Info":
     if st.button("Connect to Tableau and Fetch Content Info"):
@@ -78,49 +77,41 @@ if option == "Content Info":
             workbooks_df, datasources_df, projects_df, views_df = fetch_all_content()
 
             if workbooks_df is not None:
-                # Add download button for workbooks table
-                csv_workbooks = workbooks_df.to_csv(index=False)
-                st.download_button(
-                    label="Download Workbooks CSV",
-                    data=csv_workbooks,
-                    file_name="workbooks.csv",
-                    mime="text/csv"
-                )
                 st.write(f"There are {workbooks_df.shape[0]} workbooks on the server:")
                 st.dataframe(workbooks_df)  # Display workbooks in a table
-                
-                # Add download button for datasources table
-                csv_datasources = datasources_df.to_csv(index=False)
                 st.download_button(
-                    label="Download Datasources CSV",
-                    data=csv_datasources,
-                    file_name="datasources.csv",
+                    label="Download Workbooks Info",
+                    data=workbooks_df.to_csv(index=False).encode(),
+                    file_name="workbooks_info.csv",
                     mime="text/csv"
                 )
+                
                 st.write(f"There are {datasources_df.shape[0]} datasources on the server:")
                 st.dataframe(datasources_df)  # Display datasources in a table
-                
-                # Add download button for projects table
-                csv_projects = projects_df.to_csv(index=False)
                 st.download_button(
-                    label="Download Projects CSV",
-                    data=csv_projects,
-                    file_name="projects.csv",
+                    label="Download Datasources Info",
+                    data=datasources_df.to_csv(index=False).encode(),
+                    file_name="datasources_info.csv",
                     mime="text/csv"
                 )
+                
                 st.write(f"There are {projects_df.shape[0]} projects on the server:")
                 st.dataframe(projects_df)  # Display projects in a table
-                
-                # Add download button for views table
-                csv_views = views_df.to_csv(index=False)
                 st.download_button(
-                    label="Download Views CSV",
-                    data=csv_views,
-                    file_name="views.csv",
+                    label="Download Projects Info",
+                    data=projects_df.to_csv(index=False).encode(),
+                    file_name="projects_info.csv",
                     mime="text/csv"
                 )
+                
                 st.write(f"There are {views_df.shape[0]} views on the server:")
                 st.dataframe(views_df)  # Display views in a table
+                st.download_button(
+                    label="Download Views Info",
+                    data=views_df.to_csv(index=False).encode(),
+                    file_name="views_info.csv",
+                    mime="text/csv"
+                )
             else:
                 st.error("Unable to fetch content data.")
 
@@ -230,15 +221,4 @@ elif option == "Create Group":
                 tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site_id)
                 server = TSC.Server(server_url, use_server_version=True)
 
-                # Connect to Tableau Server/Online
-                with server.auth.sign_in(tableau_auth):
-                    # Create a new group
-                    new_group = TSC.GroupItem(name=group_name)
-                    new_group = server.groups.create(new_group)
-
-                    st.success(f"Group '{group_name}' created successfully.")
-
-            except Exception as e:
-                st.error(f"An error occurred while creating the group: {e}")
-        else:
-            st.error("Please provide a group name.")
+                # Connect
