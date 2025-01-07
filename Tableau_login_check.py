@@ -28,7 +28,7 @@ try:
 
         # Combine all the data into one DataFrame for datasources
         datasources_df = pd.DataFrame(
-            [(datasource.id, datasource.name, datasource.owner.name) for datasource in all_datasources],
+            [(datasource.id, datasource.name, datasource.created_by.name if datasource.created_by else "Unknown") for datasource in all_datasources],
             columns=["ID", "Name", "Owner"]
         )
         datasources_df["Type"] = "Datasource"
