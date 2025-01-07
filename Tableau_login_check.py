@@ -78,29 +78,34 @@ if st.button("Connect to Tableau"):
                     project_name = st.text_input("Enter the Project Name")
                     project_description = st.text_area("Enter Project Description")
 
+                    # Create the project if the button is clicked
                     if st.button("Create Project"):
                         if project_name and project_description:
                             try:
                                 # Create a project on Tableau Server
-                                top_level_project = TSC.ProjectItem(
-                                    name=project_name,
-                                    description=project_description,
-                                    content_permissions=None,
-                                    parent_id=None,
-                                    samples=True,
-                                )
-
-                                # Creating the project
-                                created_project = server.projects.create(top_level_project)
-                                st.success(f"Project '{created_project.name}' created successfully!")
-
-                                # Optionally, create nested projects (Child, Grandchild)
-                                child_project = TSC.ProjectItem(name="Child Project", parent_id=created_project.id)
-                                child_project = server.projects.create(child_project)
-                                grand_child_project = TSC.ProjectItem(name="Grand Child Project", parent_id=child_project.id)
-                                grand_child_project = server.projects.create(grand_child_project)
+                                tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site_id)
+                                server = TSC.Server(server_url, use_server_version=True)
                                 
-                                st.success("Child and Grandchild projects created successfully!")
+                                with server.auth.sign_in(tableau_auth):
+                                    top_level_project = TSC.ProjectItem(
+                                        name=project_name,
+                                        description=project_description,
+                                        content_permissions=None,
+                                        parent_id=None,
+                                        samples=True,
+                                    )
+
+                                    # Creating the project
+                                    created_project = server.projects.create(top_level_project)
+                                    st.success(f"Project '{created_project.name}' created successfully!")
+
+                                    # Optionally, create nested projects (Child, Grandchild)
+                                    child_project = TSC.ProjectItem(name="Child Project", parent_id=created_project.id)
+                                    child_project = server.projects.create(child_project)
+                                    grand_child_project = TSC.ProjectItem(name="Grand Child Project", parent_id=child_project.id)
+                                    grand_child_project = server.projects.create(grand_child_project)
+                                    
+                                    st.success("Child and Grandchild projects created successfully!")
 
                             except Exception as e:
                                 st.error(f"An error occurred while creating the project: {e}")
