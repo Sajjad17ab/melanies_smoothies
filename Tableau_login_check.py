@@ -3,6 +3,9 @@ import tableauserverclient as TSC
 import pandas as pd
 from io import BytesIO
 import logging
+import os
+from datetime import time
+from tableauserverclient import ServerResponseError
 
 
 # Streamlit UI for user credentials input
@@ -14,8 +17,8 @@ token_value = st.text_input("Enter your Tableau Personal Access Token Value", ty
 site_id = st.text_input("Enter your Tableau Site ID (Leave blank for default site)", value="")
 server_url = st.text_input("Enter Tableau Server URL", value="https://prod-apnortheast-a.online.tableau.com")
 
-# Radio button to switch between create project, content info, and publish workbook
-option = st.radio("Select an option:", ("Content Info", "Create Project", "Publish Workbook"))
+# Radio button to switch between create project, content info, publish workbook, and create group
+option = st.radio("Select an option:", ("Content Info", "Create Project", "Publish Workbook", "Create Group"))
 
 # If the user selects "Content Info"
 if option == "Content Info":
@@ -189,3 +192,58 @@ elif option == "Publish Workbook":
                 st.error(f"An error occurred while publishing the workbook: {e}")
         else:
             st.error("Please provide the uploaded file and project name.")
+
+# If the user selects "Create Group"
+elif option == "Create Group":
+    # Ask for group name
+    group_name = st.text_input("Enter the Group Name")
+
+    # File uploader for users CSV file (optional)
+    users_file = st.file_uploader("Upload CSV file with user information (optional)", type="csv")
+
+    # Button to create the group
+    if st.button("Create Group"):
+        if group_name:
+            try:
+                # Tableau authentication using Personal Access Token (PAT)
+                tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site_id)
+                server = TSC.Server(server_url, use_server_version=True)
+                
+                with server.auth.sign_in(tableau_auth):
+                    # Create a new group
+                    group = TSC.GroupItem(group_name)
+                    try:
+                        group = server.groups.create(group)
+                    except TSC.server.endpoint.exceptions.ServerResponseError as rError:
+                        if rError.code == "409009":  # Group already exists
+                            st.warning("Group already exists.")
+                            group = server.groups.filter(name=group.name)[0]
+                        else:
+                            raise rError
+
+                    # If users CSV file is uploaded, add users to the group
+                    if users_file:
+                        filepath = os.path.abspath(users_file.name)
+                        st.write(f"Adding users from file {filepath}:")
+                        added, failed = server.users.create_from_file(filepath)
+
+                        for user, error in failed:
+                            if error.code == "409017":  # User already exists
+                                user = server.users.filter(name=user.name)[0]
+                                added.append(user)
+
+                        for user in added:
+                            try:
+                                server.groups.add_user(group, user.id)
+                                st.write(f"User {user.name} added to group {group.name}")
+                            except ServerResponseError as serverError:
+                                if serverError.code == "409011":  # User already in group
+                                    st.write(f"User {user.name} is already a member of group {group.name}")
+                                else:
+                                    raise serverError
+
+                    st.success(f"Group '{group_name}' created successfully!")
+            except Exception as e:
+                st.error(f"An error occurred while creating the group: {e}")
+        else:
+            st.error("Please provide a group name.")
