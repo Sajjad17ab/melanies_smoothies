@@ -39,22 +39,19 @@ def fetch_all_content():
             # Fetch views
             all_views, _ = server.views.get()
 
-            # Populate workbook information for each view
+            # Fetch workbook details for each view
+            views_data = []
             for view in all_views:
-                server.views.populate(view)
+                server.views.populate(view)  # Populate workbook information for the view
+                workbook_name = "Unknown"
+                if view.workbook:
+                    workbook_name = view.workbook.name  # Ensure workbook is fetched for each view
+                views_data.append((view.id, view.name, workbook_name, view.project_name))
 
             # Combine all content into a dictionary to display
             workbooks_data = [(workbook.id, workbook.name, workbook.project_name, workbook.size) for workbook in all_workbooks]
             datasources_data = [(datasource.id, datasource.name, datasource.project_name, datasource.size) for datasource in all_datasources]
             projects_data = [(project.id, project.name) for project in all_projects]
-            
-            # For views, we will get the workbook associated with each view
-            views_data = []
-            for view in all_views:
-                workbook_name = "Unknown"
-                if view.workbook:
-                    workbook_name = view.workbook.name  # Ensure workbook is fetched for each view
-                views_data.append((view.id, view.name, workbook_name, view.project_name))
 
             # Create dataframes for each content type
             workbooks_df = pd.DataFrame(workbooks_data, columns=["ID", "Name", "Project", "Size"])
