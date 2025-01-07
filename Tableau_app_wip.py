@@ -4,7 +4,7 @@ import pandas as pd
 from io import BytesIO
 
 # Streamlit UI for user credentials input
-st.title("Tableau All Workbooks Details")
+st.title("Tableau Workbook Details")
 
 # Get Tableau credentials from the user (PAT)
 token_name = st.text_input("Enter your Tableau Personal Access Token Name")
