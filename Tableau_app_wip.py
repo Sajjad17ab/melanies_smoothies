@@ -37,30 +37,37 @@ if st.button("Get All Workbook Details"):
                     # Retrieve the project name by looking up project_id in the project dictionary
                     project_name = project_dict.get(workbook.project_id, "N/A")
 
-                    # Get the views associated with the workbook
-                    views, _ = server.views.get(workbook)
+                    # Retrieve workbook connections, views, and preview image
+                    server.workbooks.populate_connections(workbook)
+                    server.workbooks.populate_preview_image(workbook)
+                    server.workbooks.populate_views(workbook)
 
-                    # Get the datasources associated with the workbook
-                    datasources, _ = server.datasources.get(workbook)
+                    # Extract connections, views, and other details
+                    connections = workbook.connections
+                    views = workbook.views
+                    preview_image = workbook.preview_image
 
                     # Extract workbook details
                     workbook_details = {
                         "Workbook ID": workbook.id,
                         "Workbook Name": workbook.name,
                         "Project": project_name,
-                        "Owner": workbook.owner_id,
+                        "Owner ID": workbook.owner_id,
                         "Created At": workbook.created_at,
-                        "Modified At": workbook.updated_at,
-                        "Content URL": workbook.content_url,
+                        "Updated At": workbook.updated_at,
                         "Description": workbook.description,
                         "Tags": ", ".join(workbook.tags) if workbook.tags else "N/A",
-                        "Number of Views": len(views),
-                        "Number of Data Sources": len(datasources),
+                        "Size (MB)": workbook.size,
+                        "Show Tabs": workbook.show_tabs,
+                        "Webpage URL": workbook.webpage_url,
                     }
 
-                    # Add details of views and datasources to the workbook details
-                    workbook_details["Views Details"] = [(view.id, view.name) for view in views]
-                    workbook_details["Datasources Details"] = [(datasource.id, datasource.name) for datasource in datasources]
+                    # Add connections and views information
+                    workbook_details["Connections"] = ", ".join([f"{conn.server_address}" for conn in connections])
+                    workbook_details["Views"] = ", ".join([view.name for view in views])
+
+                    # Add the preview image URL (if available)
+                    workbook_details["Preview Image URL"] = preview_image.url if preview_image else "N/A"
 
                     workbooks_data.append(workbook_details)
 
