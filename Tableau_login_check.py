@@ -22,22 +22,14 @@ try:
         # Get the list of workbooks
         all_workbooks_items, pagination_item_wb = server.workbooks.get()
 
-        # Combine all the data into one DataFrame for users
-        users_df = pd.DataFrame([(user.id, user.name, user.name) for user in all_users], columns=["ID", "Name", "Owner"])
+        # Combine all the data into one DataFrame
+        users_df = pd.DataFrame([(user.id, user.name) for user in all_users], columns=["ID", "Name"])
         users_df["Type"] = "User"
 
-        # Combine all the data into one DataFrame for datasources
-        datasources_df = pd.DataFrame(
-            [(datasource.id, datasource.name, datasource.created_by.name if datasource.created_by else "Unknown") for datasource in all_datasources],
-            columns=["ID", "Name", "Owner"]
-        )
+        datasources_df = pd.DataFrame([(datasource.id, datasource.name) for datasource in all_datasources], columns=["ID", "Name"])
         datasources_df["Type"] = "Datasource"
 
-        # Combine all the data into one DataFrame for workbooks
-        workbooks_df = pd.DataFrame(
-            [(workbook.id, workbook.name, workbook.owner.name) for workbook in all_workbooks_items],
-            columns=["ID", "Name", "Owner"]
-        )
+        workbooks_df = pd.DataFrame([(workbook.id, workbook.name) for workbook in all_workbooks_items], columns=["ID", "Name"])
         workbooks_df["Type"] = "Workbook"
 
         # Concatenate all data into one DataFrame
