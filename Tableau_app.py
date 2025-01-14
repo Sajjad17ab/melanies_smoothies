@@ -215,4 +215,25 @@ elif option == "Create Group":
                     if users_file:
                         filepath = os.path.abspath(users_file.name)
                         st.write(f"Adding users from file {filepath}:")
-     
+                        added, failed = server.users.create_from_file(filepath)
+
+                        for user, error in failed:
+                            if error.code == "409017":  # User already exists
+                                user = server.users.filter(name=user.name)[0]
+                                added.append(user)
+
+                        for user in added:
+                            try:
+                                server.groups.add_user(group, user.id)
+                                st.write(f"User {user.name} added to group {group.name}")
+                            except ServerResponseError as serverError:
+                                if serverError.code == "409011":  # User already in group
+                                    st.write(f"User {user.name} is already a member of group {group.name}")
+                                else:
+                                    raise serverError
+
+                    st.success(f"Group '{group_name}' created successfully!")
+            except Exception as e:
+                st.error(f"An error occurred while creating the group: {e}")
+        else:
+            st.error("Please provide a group name.")
