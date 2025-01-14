@@ -1,3 +1,12 @@
+import streamlit as st
+import tableauserverclient as TSC
+import pandas as pd
+from io import BytesIO
+import os
+from datetime import time
+from tableauserverclient import ServerResponseError
+
+
 # Streamlit UI for user credentials input
 st.title("Tableau Login with Personal Access Token (PAT)")
 
