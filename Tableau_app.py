@@ -4,48 +4,11 @@ import pandas as pd
 from io import BytesIO
 import os
 import logging
+from datetime import time
 
 # Set up logging for debugging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
-
-# Function to get workbook by name
-def get_workbook_by_name(server, workbook_name):
-    workbooks, pagination_item = server.workbooks.get()
-    for workbook in workbooks:
-        if workbook.name == workbook_name:
-            return workbook
-    return None
-
-# Function to get datasource by name
-def get_datasource_by_name(server, datasource_name):
-    datasources, pagination_item = server.datasources.get()
-    for datasource in datasources:
-        if datasource.name == datasource_name:
-            return datasource
-    return None
-
-# Function to get schedule by name
-def get_schedule_by_name(server, schedule_name):
-    schedules, pagination_item = server.schedules.get()
-    for schedule in schedules:
-        if schedule.name == schedule_name:
-            return schedule
-    return None
-
-# Function to assign resource to schedule
-def assign_to_schedule(server, resource, schedule):
-    try:
-        if isinstance(resource, TSC.Workbook):
-            server.workbooks.refresh(resource.id, schedule.id)
-        elif isinstance(resource, TSC.Datasource):
-            server.datasources.refresh(resource.id, schedule.id)
-        else:
-            raise ValueError("Resource must be either a Workbook or Datasource")
-    except Exception as e:
-        st.error(f"Error assigning to schedule: {e}")
-        return False
-    return True
 
 # Streamlit UI for user credentials input
 st.title("Tableau Automation with Personal Access Token (PAT)")
@@ -57,7 +20,102 @@ site_id = st.text_input("Enter your Tableau Site ID (Leave blank for default sit
 server_url = st.text_input("Enter Tableau Server URL", value="https://prod-apnortheast-a.online.tableau.com")
 
 # Dropdown to switch between create project, content info, publish workbook, create group, and create schedules
-option = st.selectbox("Select an option:", ["Content Info", "Create Project", "Publish Workbook", "Create Group", "Refresh Data Source/Workbook"])
+option = st.selectbox("Select an option:", ["Content Info", "Create Project", "Publish Workbook", "Create Group"])
+# New Code to check
+import tableauserverclient as TSC
+
+def make_filter(**kwargs):
+    """Helper function to create a filter for the API requests."""
+    options = TSC.RequestOptions()
+    for item, value in kwargs.items():
+        name = getattr(TSC.RequestOptions.Field, item)
+        options.filter.add(TSC.Filter(name, TSC.RequestOptions.Operator.Equals, value))
+    return options
+
+def get_workbook_by_name(server, name):
+    """Fetches a workbook by its name."""
+    request_filter = make_filter(Name=name)
+    workbooks, _ = server.workbooks.get(request_filter)
+    assert len(workbooks) == 1, f"Workbook {name} not found or multiple workbooks found."
+    return workbooks.pop()
+
+def get_datasource_by_name(server, name):
+    """Fetches a datasource by its name."""
+    request_filter = make_filter(Name=name)
+    datasources, _ = server.datasources.get(request_filter)
+    assert len(datasources) == 1, f"Datasource {name} not found or multiple datasources found."
+    return datasources.pop()
+
+def get_flow_by_name(server, name):
+    """Fetches a flow by its name."""
+    request_filter = make_filter(Name=name)
+    flows, _ = server.flows.get(request_filter)
+    assert len(flows) == 1, f"Flow {name} not found or multiple flows found."
+    return flows.pop()
+
+def get_schedule_by_name(server, name):
+    """Fetches a schedule by its name."""
+    schedules = [x for x in TSC.Pager(server.schedules) if x.name == name]
+    assert len(schedules) == 1, f"Schedule {name} not found or multiple schedules found."
+    return schedules.pop()
+
+def assign_to_schedule(server, workbook_or_datasource, schedule):
+    """Assign a workbook or datasource to a schedule."""
+    server.schedules.add_to_schedule(schedule.id, workbook_or_datasource)
+How to Use It in Your Main Code
+Ensure that you integrate these functions properly into your workflow. Here's a modified section that includes calling get_workbook_by_name and assigning it to the correct schedule:
+
+python
+Copy code
+import logging
+import tableauserverclient as TSC
+
+def refresh_workbook_or_datasource(token_name, token_value, site_id, server_url, resource_type, resource_id, schedule_name):
+    """Function to refresh a workbook or datasource with a specific schedule."""
+    
+    # Set up logging
+    logging.basicConfig(level=logging.DEBUG)
+    logger = logging.getLogger()
+
+    try:
+        # Authentication and server connection
+        tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site_id)
+        server = TSC.Server(server_url, use_server_version=True)
+        
+        with server.auth.sign_in(tableau_auth):
+            # Determine the resource to refresh based on user input (workbook, datasource, etc.)
+            if resource_type == "workbook":
+                item = get_workbook_by_name(server, resource_id)
+            elif resource_type == "datasource":
+                item = get_datasource_by_name(server, resource_id)
+            else:
+                raise ValueError("Invalid resource type specified.")
+            
+            # Get the schedule by name
+            schedule = get_schedule_by_name(server, schedule_name)
+            
+            # Assign the item (workbook/datasource) to the selected schedule
+            assign_to_schedule(server, item, schedule)
+            
+            logger.info(f"Successfully assigned {resource_type} '{resource_id}' to schedule '{schedule_name}'.")
+            return True
+    except Exception as e:
+        logger.error(f"An error occurred while refreshing the workbook/datasource: {str(e)}")
+        return False
+
+# Example usage
+refresh_workbook_or_datasource(
+    token_name="your_token_name", 
+    token_value="your_token_value", 
+    site_id="your_site_id", 
+    server_url="https://your.tableau.server.url", 
+    resource_type="workbook", 
+    resource_id="your_workbook_id", 
+    schedule_name="Daily Refresh"
+)
+# New Code End
+
+
 
 # If the user selects "Content Info"
 if option == "Content Info":
@@ -167,6 +225,17 @@ elif option == "Publish Workbook":
                     with open(file_path, "wb") as f:
                         f.write(uploaded_file.getbuffer())
 
+                    connection1 = TSC.ConnectionItem()
+                    connection1.server_address = "mssql.test.com"
+                    connection1.connection_credentials = TSC.ConnectionCredentials("test", "password", True)
+
+                    connection2 = TSC.ConnectionItem()
+                    connection2.server_address = "postgres.test.com"
+                    connection2.server_port = "5432"
+                    connection2.connection_credentials = TSC.ConnectionCredentials("test", "password", True)
+
+                    all_connections = [connection1, connection2]
+
                     overwrite_true = TSC.Server.PublishMode.Overwrite
                     new_workbook = TSC.WorkbookItem(
                         project_id=project_id,
@@ -177,7 +246,8 @@ elif option == "Publish Workbook":
                     new_workbook = server.workbooks.publish(
                         new_workbook,
                         file_path,
-                        overwrite_true
+                        overwrite_true,
+                        connections=all_connections
                     )
 
                     st.success(f"Workbook '{new_workbook.name}' published successfully!")
@@ -233,47 +303,3 @@ elif option == "Create Group":
                 st.error(f"An error occurred while creating the group: {e}")
         else:
             st.error("Please provide a group name.")
-
-# If the user selects "Refresh Data Source/Workbook"
-elif option == "Refresh Data Source/Workbook":
-    resource_name = st.text_input("Enter the resource name (Workbook or DataSource)")
-    schedule_name = st.text_input("Enter the schedule name")
-    refresh_option = st.selectbox("Select a refresh option:", ["Workbook", "Datasource"])
-
-    if st.button("Refresh"):
-        if resource_name and schedule_name and refresh_option:
-            try:
-                tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site_id)
-                server = TSC.Server(server_url, use_server_version=True)
-
-                with server.auth.sign_in(tableau_auth):
-                    st.success("Successfully authenticated to Tableau Server!")
-
-                    # Identify the resource (Workbook or Datasource)
-                    if refresh_option == "Workbook":
-                        resource = get_workbook_by_name(server, resource_name)
-                    elif refresh_option == "Datasource":
-                        resource = get_datasource_by_name(server, resource_name)
-                    
-                    # Ensure the resource is found
-                    if not resource:
-                        st.error(f"{refresh_option} '{resource_name}' not found.")
-                        return
-
-                    # Retrieve the schedule
-                    schedule = get_schedule_by_name(server, schedule_name)
-                    
-                    # Ensure the schedule is found
-                    if not schedule:
-                        st.error(f"Schedule '{schedule_name}' not found.")
-                        return
-
-                    # Assign the resource to the schedule
-                    if assign_to_schedule(server, resource, schedule):
-                        st.success(f"{refresh_option} '{resource_name}' has been assigned to the '{schedule_name}' schedule.")
-                    else:
-                        st.error(f"Failed to assign {refresh_option} '{resource_name}' to the schedule.")
-            except Exception as e:
-                st.error(f"An error occurred while refreshing the {refresh_option}: {e}")
-        else:
-            st.error("Please provide the resource name, schedule name, and select a refresh option.")
