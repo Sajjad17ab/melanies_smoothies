@@ -20,7 +20,7 @@ site_id = st.text_input("Enter your Tableau Site ID (Leave blank for default sit
 server_url = st.text_input("Enter Tableau Server URL", value="https://prod-apnortheast-a.online.tableau.com")
 
 # Dropdown to switch between create project, content info, publish workbook, create group, and create schedules
-option = st.selectbox("Select an option:", ["Content Info", "Create Project", "Publish Workbook", "Create Group"])
+option = st.selectbox("Select an option:", ["Content Info", "Create Project", "Publish Workbook", "Create Group", "Refresh Data Source/Workbook"])
 
 # If the user selects "Content Info"
 if option == "Content Info":
@@ -208,3 +208,31 @@ elif option == "Create Group":
                 st.error(f"An error occurred while creating the group: {e}")
         else:
             st.error("Please provide a group name.")
+
+# If the user selects "Refresh Data Source/Workbook"
+elif option == "Refresh Data Source/Workbook":
+    refresh_option = st.selectbox("Choose which type to refresh", ["Workbook", "Datasource"])
+    resource_name = st.text_input(f"Enter the {refresh_option} name to refresh")
+    schedule_name = st.text_input("Enter the schedule name to apply")
+
+    if st.button("Refresh Data Source/Workbook"):
+        if resource_name and schedule_name:
+            try:
+                tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site_id)
+                server = TSC.Server(server_url, use_server_version=True)
+
+                with server.auth.sign_in(tableau_auth):
+                    if refresh_option == "Workbook":
+                        resource = get_workbook_by_name(server, resource_name)
+                    elif refresh_option == "Datasource":
+                        resource = get_datasource_by_name(server, resource_name)
+                    
+                    schedule = get_schedule_by_name(server, schedule_name)
+                    
+                    assign_to_schedule(server, resource, schedule)
+
+                    st.success(f"{refresh_option} '{resource_name}' has been assigned to the '{schedule_name}' schedule.")
+            except Exception as e:
+                st.error(f"An error occurred while refreshing the {refresh_option}: {e}")
+        else:
+            st.error("Please provide the resource name and schedule name.")
