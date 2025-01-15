@@ -2,13 +2,11 @@ import streamlit as st
 import tableauserverclient as TSC
 import pandas as pd
 from io import BytesIO
-import os
 import logging
+import os
 from datetime import time
+from tableauserverclient import ServerResponseError
 
-# Set up logging for debugging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger()
 
 # Streamlit UI for user credentials input
 st.title("Tableau Login with Personal Access Token (PAT)")
@@ -20,41 +18,56 @@ site_id = st.text_input("Enter your Tableau Site ID (Leave blank for default sit
 server_url = st.text_input("Enter Tableau Server URL", value="https://prod-apnortheast-a.online.tableau.com")
 
 # Dropdown to switch between create project, content info, publish workbook, create group, and create schedules
-option = st.selectbox("Select an option:", ["Content Info", "Create Project", "Publish Workbook", "Create Group", "Create Schedules"])
+option = st.selectbox("Select an option:", ("Content Info", "Create Project", "Publish Workbook", "Create Group", "Create Schedules"))
 
 # If the user selects "Content Info"
 if option == "Content Info":
     if st.button("Connect to Tableau"):
         if token_name and token_value and server_url:
             try:
+                # Tableau authentication using Personal Access Token (PAT)
                 tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site_id)
                 server = TSC.Server(server_url, use_server_version=True)
 
+                # Connect to Tableau Server/Online
                 with server.auth.sign_in(tableau_auth):
+                    # Get the list of users
                     all_users, pagination_item = server.users.get()
+
+                    # Get the list of datasources
                     all_datasources, pagination_item_ds = server.datasources.get()
+
+                    # Get the list of workbooks
                     all_workbooks_items, pagination_item_wb = server.workbooks.get()
 
+                    # Combine all the data into one DataFrame for users
                     users_df = pd.DataFrame([(user.id, user.name) for user in all_users], columns=["ID", "Name"])
-                    users_df["Type"] = "User"
+                    users_df["Type"] = "User"  # Add a 'Type' column indicating that this data is about users
 
+                    # Combine all the data into one DataFrame for datasources
                     datasources_df = pd.DataFrame([(datasource.id, datasource.name) for datasource in all_datasources], columns=["ID", "Name"])
-                    datasources_df["Type"] = "Datasource"
+                    datasources_df["Type"] = "Datasource"  # Add a 'Type' column indicating that this data is about datasources
 
+                    # Combine all the data into one DataFrame for workbooks
                     workbooks_df = pd.DataFrame([(workbook.id, workbook.name) for workbook in all_workbooks_items], columns=["ID", "Name"])
-                    workbooks_df["Type"] = "Workbook"
+                    workbooks_df["Type"] = "Workbook"  # Add a 'Type' column indicating that this data is about workbooks
 
+                    # Concatenate all data into one DataFrame
                     combined_df = pd.concat([users_df, datasources_df, workbooks_df], ignore_index=True)
-                    st.write(f"There are {combined_df.shape[0]} total entries:")
-                    st.dataframe(combined_df)
 
+                    # Display the combined DataFrame in a table format
+                    st.write(f"There are {combined_df.shape[0]} total entries:")
+                    st.dataframe(combined_df)  # Display the combined table in Streamlit app
+
+                    # Function to convert DataFrame to Excel
                     def to_excel(df):
                         output = BytesIO()
                         with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
                             df.to_excel(writer, index=False, sheet_name="Tableau Data")
-                        output.seek(0)
+                        output.seek(0)  # Rewind the buffer to the beginning
                         return output
 
+                    # Add a radio button to let users choose the export format
                     export_option = st.radio("Choose export format:", ("Excel", "CSV"))
 
                     if export_option == "Excel":
@@ -75,7 +88,7 @@ if option == "Content Info":
                         )
 
             except Exception as e:
-                st.error(f"An error occurred: {e}")
+                st.error(f"An error occurred while connecting to Tableau: {e}")
         else:
             st.error("Please provide all the necessary credentials.")
 
@@ -89,7 +102,7 @@ elif option == "Create Project":
             try:
                 tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site_id)
                 server = TSC.Server(server_url, use_server_version=True)
-                
+
                 with server.auth.sign_in(tableau_auth):
                     top_level_project = TSC.ProjectItem(
                         name=project_name,
@@ -100,6 +113,7 @@ elif option == "Create Project":
 
                     created_project = server.projects.create(top_level_project)
                     st.success(f"Project '{created_project.name}' created successfully!")
+
             except Exception as e:
                 st.error(f"An error occurred while creating the project: {e}")
         else:
@@ -115,7 +129,7 @@ elif option == "Publish Workbook":
             try:
                 tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site_id)
                 server = TSC.Server(server_url, use_server_version=True)
-                
+
                 with server.auth.sign_in(tableau_auth):
                     req_options = TSC.RequestOptions()
                     req_options.filter.add(
@@ -156,6 +170,7 @@ elif option == "Publish Workbook":
                     )
 
                     st.success(f"Workbook '{new_workbook.name}' published successfully!")
+
             except Exception as e:
                 st.error(f"An error occurred while publishing the workbook: {e}")
         else:
@@ -171,13 +186,13 @@ elif option == "Create Group":
             try:
                 tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site_id)
                 server = TSC.Server(server_url, use_server_version=True)
-                
+
                 with server.auth.sign_in(tableau_auth):
                     group = TSC.GroupItem(group_name)
                     try:
                         group = server.groups.create(group)
                     except TSC.server.endpoint.exceptions.ServerResponseError as rError:
-                        if rError.code == "409009":  
+                        if rError.code == "409009":  # Group already exists
                             st.warning("Group already exists.")
                             group = server.groups.filter(name=group.name)[0]
                         else:
@@ -189,7 +204,7 @@ elif option == "Create Group":
                         added, failed = server.users.create_from_file(filepath)
 
                         for user, error in failed:
-                            if error.code == "409017":  
+                            if error.code == "409017":  # User already exists
                                 user = server.users.filter(name=user.name)[0]
                                 added.append(user)
 
@@ -197,13 +212,14 @@ elif option == "Create Group":
                             try:
                                 server.groups.add_user(group, user.id)
                                 st.write(f"User {user.name} added to group {group.name}")
-                            except TSC.ServerResponseError as serverError:
-                                if serverError.code == "409011":  
+                            except ServerResponseError as serverError:
+                                if serverError.code == "409011":  # User already in group
                                     st.write(f"User {user.name} is already a member of group {group.name}")
                                 else:
                                     raise serverError
 
                     st.success(f"Group '{group_name}' created successfully!")
+
             except Exception as e:
                 st.error(f"An error occurred while creating the group: {e}")
         else:
@@ -215,11 +231,16 @@ elif option == "Create Schedules":
         if token_name and token_value and server_url:
             try:
                 tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site_id)
-                server = TSC.Server(server_url, use_server_version=False)
-                server.add_http_options({"verify": False})
-                server.use_server_version()
+                server = TSC.Server(server_url, use_server_version=True)
 
                 with server.auth.sign_in(tableau_auth):
+                    # Check if the current user is a system administrator
+                    current_user = server.users.get_by_id(server.auth.token)
+                    user_roles = [role.name for role in current_user.roles]
+                    if "Server Administrator" not in user_roles:
+                        st.error("You do not have the necessary permissions (Server Administrator) to create schedules.")
+                        return
+                    
                     # Hourly Schedule
                     hourly_interval = TSC.HourlyInterval(start_time=time(2, 30), end_time=time(23, 0), interval_value=2)
                     hourly_schedule = TSC.ScheduleItem(
