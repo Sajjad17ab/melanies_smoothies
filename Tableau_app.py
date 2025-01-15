@@ -4,7 +4,6 @@ import pandas as pd
 from io import BytesIO
 import os
 import logging
-from datetime import time
 
 # Set up logging for debugging
 logging.basicConfig(level=logging.DEBUG)
@@ -17,6 +16,36 @@ def get_workbook_by_name(server, workbook_name):
         if workbook.name == workbook_name:
             return workbook
     return None
+
+# Function to get datasource by name
+def get_datasource_by_name(server, datasource_name):
+    datasources, pagination_item = server.datasources.get()
+    for datasource in datasources:
+        if datasource.name == datasource_name:
+            return datasource
+    return None
+
+# Function to get schedule by name
+def get_schedule_by_name(server, schedule_name):
+    schedules, pagination_item = server.schedules.get()
+    for schedule in schedules:
+        if schedule.name == schedule_name:
+            return schedule
+    return None
+
+# Function to assign resource to schedule
+def assign_to_schedule(server, resource, schedule):
+    try:
+        if isinstance(resource, TSC.Workbook):
+            server.workbooks.refresh(resource.id, schedule.id)
+        elif isinstance(resource, TSC.Datasource):
+            server.datasources.refresh(resource.id, schedule.id)
+        else:
+            raise ValueError("Resource must be either a Workbook or Datasource")
+    except Exception as e:
+        st.error(f"Error assigning to schedule: {e}")
+        return False
+    return True
 
 # Streamlit UI for user credentials input
 st.title("Tableau Automation with Personal Access Token (PAT)")
@@ -138,17 +167,6 @@ elif option == "Publish Workbook":
                     with open(file_path, "wb") as f:
                         f.write(uploaded_file.getbuffer())
 
-                    connection1 = TSC.ConnectionItem()
-                    connection1.server_address = "mssql.test.com"
-                    connection1.connection_credentials = TSC.ConnectionCredentials("test", "password", True)
-
-                    connection2 = TSC.ConnectionItem()
-                    connection2.server_address = "postgres.test.com"
-                    connection2.server_port = "5432"
-                    connection2.connection_credentials = TSC.ConnectionCredentials("test", "password", True)
-
-                    all_connections = [connection1, connection2]
-
                     overwrite_true = TSC.Server.PublishMode.Overwrite
                     new_workbook = TSC.WorkbookItem(
                         project_id=project_id,
@@ -159,8 +177,7 @@ elif option == "Publish Workbook":
                     new_workbook = server.workbooks.publish(
                         new_workbook,
                         file_path,
-                        overwrite_true,
-                        connections=all_connections
+                        overwrite_true
                     )
 
                     st.success(f"Workbook '{new_workbook.name}' published successfully!")
@@ -218,39 +235,45 @@ elif option == "Create Group":
             st.error("Please provide a group name.")
 
 # If the user selects "Refresh Data Source/Workbook"
-elif st.button("Refresh Data Source/Workbook"):
-    if resource_name and schedule_name and refresh_option:
-        try:
-            tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site_id)
-            server = TSC.Server(server_url, use_server_version=True)
+elif option == "Refresh Data Source/Workbook":
+    resource_name = st.text_input("Enter the resource name (Workbook or DataSource)")
+    schedule_name = st.text_input("Enter the schedule name")
+    refresh_option = st.selectbox("Select a refresh option:", ["Workbook", "Datasource"])
 
-            with server.auth.sign_in(tableau_auth):
-                st.success("Successfully authenticated to Tableau Server!")
+    if st.button("Refresh"):
+        if resource_name and schedule_name and refresh_option:
+            try:
+                tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site_id)
+                server = TSC.Server(server_url, use_server_version=True)
 
-                # Identify the resource (Workbook or Datasource)
-                if refresh_option == "Workbook":
-                    resource = get_workbook_by_name(server, resource_name)
-                elif refresh_option == "Datasource":
-                    resource = get_datasource_by_name(server, resource_name)
-                
-                # Ensure the resource is found
-                if not resource:
-                    st.error(f"{refresh_option} '{resource_name}' not found.")
-                    return
+                with server.auth.sign_in(tableau_auth):
+                    st.success("Successfully authenticated to Tableau Server!")
 
-                # Retrieve the schedule
-                schedule = get_schedule_by_name(server, schedule_name)
-                
-                # Ensure the schedule is found
-                if not schedule:
-                    st.error(f"Schedule '{schedule_name}' not found.")
-                    return
+                    # Identify the resource (Workbook or Datasource)
+                    if refresh_option == "Workbook":
+                        resource = get_workbook_by_name(server, resource_name)
+                    elif refresh_option == "Datasource":
+                        resource = get_datasource_by_name(server, resource_name)
+                    
+                    # Ensure the resource is found
+                    if not resource:
+                        st.error(f"{refresh_option} '{resource_name}' not found.")
+                        return
 
-                # Assign the resource to the schedule
-                assign_to_schedule(server, resource, schedule)
+                    # Retrieve the schedule
+                    schedule = get_schedule_by_name(server, schedule_name)
+                    
+                    # Ensure the schedule is found
+                    if not schedule:
+                        st.error(f"Schedule '{schedule_name}' not found.")
+                        return
 
-                st.success(f"{refresh_option} '{resource_name}' has been assigned to the '{schedule_name}' schedule.")
-        except Exception as e:
-            st.error(f"An error occurred while refreshing the {refresh_option}: {e}")
-    else:
-        st.error("Please provide the resource name, schedule name, and select a refresh option.")
+                    # Assign the resource to the schedule
+                    if assign_to_schedule(server, resource, schedule):
+                        st.success(f"{refresh_option} '{resource_name}' has been assigned to the '{schedule_name}' schedule.")
+                    else:
+                        st.error(f"Failed to assign {refresh_option} '{resource_name}' to the schedule.")
+            except Exception as e:
+                st.error(f"An error occurred while refreshing the {refresh_option}: {e}")
+        else:
+            st.error("Please provide the resource name, schedule name, and select a refresh option.")
