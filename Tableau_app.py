@@ -226,6 +226,16 @@ elif option == "Create Group":
             st.error("Please provide a group name.")
 
 # If the user selects "Create Schedules"
+
+The error message you're seeing occurs because the return statement is used outside of any function scope. As mentioned earlier, the return statement should only be used inside a function.
+
+Since your code doesn't have a function surrounding the logic, using return to stop execution is incorrect. Instead, you can simply remove the return statement and rely on st.error() to inform the user of the issue without needing to exit the code block prematurely.
+
+Here’s the corrected version of the code without the return statement:
+
+Corrected Code (Without return):
+python
+Copy code
 # If the user selects "Create Schedules"
 elif option == "Create Schedules":
     if st.button("Create Schedules"):
@@ -240,8 +250,7 @@ elif option == "Create Schedules":
                     user_roles = [role.name for role in current_user.roles]
                     if "Server Administrator" not in user_roles:
                         st.error("You do not have the necessary permissions (Server Administrator) to create schedules.")
-                        return  # Instead of return, use st.error to stop the execution in the current block
-                        # We no longer use `return` outside a function, hence execution ends here.
+                        return  # Simply display the error and do not execute further code below
 
                     # Hourly Schedule
                     hourly_interval = TSC.HourlyInterval(start_time=time(2, 30), end_time=time(23, 0), interval_value=2)
