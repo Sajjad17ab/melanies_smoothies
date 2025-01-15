@@ -22,7 +22,6 @@ server_url = st.text_input("Enter Tableau Server URL", value="https://prod-apnor
 # Dropdown to switch between create project, content info, publish workbook, create group, and create schedules
 option = st.selectbox("Select an option:", ["Content Info", "Create Project", "Publish Workbook", "Create Group", "Refresh Data Source/Workbook"])
 # New Code to check
-import tableauserverclient as TSC
 
 def make_filter(**kwargs):
     """Helper function to create a filter for the API requests."""
