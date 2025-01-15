@@ -127,9 +127,15 @@ elif option == "Create Schedules":
                 server = TSC.Server(server_url, use_server_version=True)
 
                 with server.auth.sign_in(tableau_auth):
-                    # Check if the current user is a system administrator
-                    current_user = server.users.get_by_id(server.auth.token)
-                    user_roles = [role.name for role in current_user.roles]
+                    # Retrieve the current user details (this approach should work)
+                    current_user = server.auth.sign_in(tableau_auth)
+                    user_id = current_user.id
+
+                    # Fetch user details to check roles
+                    user = server.users.get_by_id(user_id)
+
+                    # Check if the current user has "Server Administrator" role
+                    user_roles = [role.name for role in user.roles]
                     if "Server Administrator" not in user_roles:
                         st.error("You do not have the necessary permissions (Server Administrator) to create schedules.")
                     else:
