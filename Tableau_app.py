@@ -10,6 +10,40 @@ from datetime import time
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
 
+# Helper Functions
+def make_filter(**kwargs):
+    """Helper function to create a filter for the API requests."""
+    options = TSC.RequestOptions()
+    for item, value in kwargs.items():
+        name = getattr(TSC.RequestOptions.Field, item)
+        options.filter.add(TSC.Filter(name, TSC.RequestOptions.Operator.Equals, value))
+    return options
+
+def get_workbook_by_name(server, name):
+    """Fetches a workbook by its name."""
+    request_filter = make_filter(Name=name)
+    workbooks, _ = server.workbooks.get(request_filter)
+    assert len(workbooks) == 1, f"Workbook {name} not found or multiple workbooks found."
+    return workbooks.pop()
+
+def get_datasource_by_name(server, name):
+    """Fetches a datasource by its name."""
+    request_filter = make_filter(Name=name)
+    datasources, _ = server.datasources.get(request_filter)
+    assert len(datasources) == 1, f"Datasource {name} not found or multiple datasources found."
+    return datasources.pop()
+
+def get_schedule_by_name(server, name):
+    """Fetches a schedule by its name."""
+    schedules = [x for x in TSC.Pager(server.schedules) if x.name == name]
+    assert len(schedules) == 1, f"Schedule {name} not found or multiple schedules found."
+    return schedules.pop()
+
+def assign_to_schedule(server, workbook_or_datasource, schedule):
+    """Assign a workbook or datasource to a schedule."""
+    server.schedules.add_to_schedule(schedule.id, workbook_or_datasource)
+
+
 # Streamlit UI for user credentials input
 st.title("Tableau Automation with Personal Access Token (PAT)")
 
