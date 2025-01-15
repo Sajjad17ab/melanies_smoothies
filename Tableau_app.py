@@ -26,6 +26,8 @@ elif auth_method =="Username/Password":
     # Credentials for Username/Password Authentication
     username = st.text_input("Enter your Tableau Username (if using Username/Password)")
     password = st.text_input("Enter your Tableau Password (if using Username/Password)", type="password")
+    site_id = st.text_input("Enter your Tableau Site ID (Leave blank for default site)", value="")
+    server_url = st.text_input("Enter Tableau Server URL", value="https://prod-apnortheast-a.online.tableau.com")
 
 # Dropdown to switch between create project, content info, publish workbook, and create group
 option = st.selectbox("Select an option:", ["Content Info", "Create Project", "Publish Workbook", "Create Group"])
