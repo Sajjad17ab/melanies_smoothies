@@ -226,6 +226,7 @@ elif option == "Create Group":
             st.error("Please provide a group name.")
 
 # If the user selects "Create Schedules"
+# If the user selects "Create Schedules"
 elif option == "Create Schedules":
     if st.button("Create Schedules"):
         if token_name and token_value and server_url:
@@ -239,8 +240,9 @@ elif option == "Create Schedules":
                     user_roles = [role.name for role in current_user.roles]
                     if "Server Administrator" not in user_roles:
                         st.error("You do not have the necessary permissions (Server Administrator) to create schedules.")
-                        return
-                    
+                        return  # Instead of return, use st.error to stop the execution in the current block
+                        # We no longer use `return` outside a function, hence execution ends here.
+
                     # Hourly Schedule
                     hourly_interval = TSC.HourlyInterval(start_time=time(2, 30), end_time=time(23, 0), interval_value=2)
                     hourly_schedule = TSC.ScheduleItem(
