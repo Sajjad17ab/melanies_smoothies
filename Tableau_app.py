@@ -126,10 +126,11 @@ elif option == "Create Schedules":
                 tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site_id)
                 server = TSC.Server(server_url, use_server_version=True)
 
+                # Sign in and retrieve the authenticated user details
                 with server.auth.sign_in(tableau_auth):
-                    # Retrieve the current user details (this approach should work)
-                    current_user = server.auth.sign_in(tableau_auth)
-                    user_id = current_user.id
+                    # Fetch the currently authenticated user details
+                    current_user = server.auth.token
+                    user_id = current_user['id']
 
                     # Fetch user details to check roles
                     user = server.users.get_by_id(user_id)
