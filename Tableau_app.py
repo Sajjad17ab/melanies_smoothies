@@ -118,77 +118,65 @@ elif option == "Create Project":
         else:
             st.error("Please provide both project name and description.")
 
-# If the user selects "Create Schedules"
-elif option == "Create Schedules":
-    if st.button("Create Schedules"):
-        if token_name and token_value and server_url:
+# If the user selects "Create Extract Task"
+if option == "Create Extract Task":
+    resource_type = st.selectbox("Select Resource Type", ("workbook", "datasource"))
+    resource_id = st.text_input("Enter the Resource ID (Workbook or Datasource ID)")
+    incremental = st.checkbox("Enable Incremental Refresh")
+
+    if st.button("Create Extract Task"):
+        if token_name and token_value and server_url and resource_id:
             try:
                 tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site_id)
                 server = TSC.Server(server_url, use_server_version=True)
 
-                # Sign in and retrieve the authenticated user details
                 with server.auth.sign_in(tableau_auth):
-                    # Fetch the currently authenticated user details
-                    current_user = server.auth.token
-                    user_id = current_user['id']
+                    # Set the refresh type
+                    refresh_type = "FullRefresh" if not incremental else "Incremental"
 
-                    # Fetch user details to check roles
-                    user = server.users.get_by_id(user_id)
+                    # Define the monthly schedule interval (15th of every month at 11:30 PM)
+                    monthly_interval = TSC.MonthlyInterval(start_time=time(23, 30), interval_value=15)
 
-                    # Check if the current user has "Server Administrator" role
-                    user_roles = [role.name for role in user.roles]
-                    if "Server Administrator" not in user_roles:
-                        st.error("You do not have the necessary permissions (Server Administrator) to create schedules.")
-                    else:
-                        # Hourly Schedule
-                        hourly_interval = TSC.HourlyInterval(start_time=time(2, 30), end_time=time(23, 0), interval_value=2)
-                        hourly_schedule = TSC.ScheduleItem(
-                            "Hourly-Schedule",
-                            50,
-                            TSC.ScheduleItem.Type.Extract,
-                            TSC.ScheduleItem.ExecutionOrder.Parallel,
-                            hourly_interval,
-                        )
-                        hourly_schedule = server.schedules.create(hourly_schedule)
-                        st.write(f"Hourly schedule created (ID: {hourly_schedule.id}).")
+                    # Create a schedule item for the task
+                    monthly_schedule = TSC.ScheduleItem(
+                        None,
+                        None,
+                        None,
+                        None,
+                        monthly_interval,
+                    )
 
-                        # Daily Schedule
-                        daily_interval = TSC.DailyInterval(start_time=time(5))
-                        daily_schedule = TSC.ScheduleItem(
-                            "Daily-Schedule",
-                            60,
-                            TSC.ScheduleItem.Type.Subscription,
-                            TSC.ScheduleItem.ExecutionOrder.Serial,
-                            daily_interval,
-                        )
-                        daily_schedule = server.schedules.create(daily_schedule)
-                        st.write(f"Daily schedule created (ID: {daily_schedule.id}).")
+                    # Retrieve the resource (workbook or datasource) by ID
+                    if resource_type == "workbook":
+                        resource_item = server.workbooks.get_by_id(resource_id)
+                    elif resource_type == "datasource":
+                        resource_item = server.datasources.get_by_id(resource_id)
 
-                        # Weekly Schedule
-                        weekly_interval = TSC.WeeklyInterval(time(19, 15), TSC.IntervalItem.Day.Monday, TSC.IntervalItem.Day.Wednesday, TSC.IntervalItem.Day.Friday)
-                        weekly_schedule = TSC.ScheduleItem(
-                            "Weekly-Schedule",
-                            70,
-                            TSC.ScheduleItem.Type.Extract,
-                            TSC.ScheduleItem.ExecutionOrder.Serial,
-                            weekly_interval,
-                        )
-                        weekly_schedule = server.schedules.create(weekly_schedule)
-                        st.write(f"Weekly schedule created (ID: {weekly_schedule.id}).")
+                    # Create the target item (workbook or datasource)
+                    target_item = TSC.Target(
+                        resource_item.id,  # the ID of the workbook or datasource
+                        resource_type,  # could be "workbook" or "datasource"
+                    )
 
-                        # Monthly Schedule
-                        monthly_interval = TSC.MonthlyInterval(start_time=time(23, 30), interval_value=15)
-                        monthly_schedule = TSC.ScheduleItem(
-                            "Monthly-Schedule",
-                            80,
-                            TSC.ScheduleItem.Type.Subscription,
-                            TSC.ScheduleItem.ExecutionOrder.Parallel,
-                            monthly_interval,
-                        )
-                        monthly_schedule = server.schedules.create(monthly_schedule)
-                        st.write(f"Monthly schedule created (ID: {monthly_schedule.id}).")
+                    # Create the scheduled extract task
+                    scheduled_extract_item = TSC.TaskItem(
+                        None,
+                        refresh_type,  # Refresh type (Full or Incremental)
+                        None,
+                        None,
+                        None,
+                        monthly_schedule,
+                        None,
+                        target_item,
+                    )
+
+                    # Create the scheduled extract task on Tableau Server
+                    response = server.tasks.create(scheduled_extract_item)
+
+                    # Display the response
+                    st.success(f"Extract task created successfully: {response}")
 
             except Exception as e:
-                st.error(f"An error occurred while creating the schedules: {e}")
+                st.error(f"An error occurred while creating the extract task: {e}")
         else:
-            st.error("Please provide all the necessary credentials.")
+            st.error("Please provide all the necessary credentials and resource ID.")
