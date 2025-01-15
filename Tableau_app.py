@@ -6,31 +6,50 @@ import os
 from datetime import time
 from tableauserverclient import ServerResponseError
 
-
 # Streamlit UI for user credentials input
-st.title("Tableau Login with Personal Access Token (PAT)")
+st.title("Tableau Login with Username/Password or Personal Access Token (PAT)")
 
-# Get Tableau credentials from the user (PAT)
-token_name = st.text_input("Enter your Tableau Personal Access Token Name")
-token_value = st.text_input("Enter your Tableau Personal Access Token Value", type="password")
-site_id = st.text_input("Enter your Tableau Site ID (Leave blank for default site)", value="")
-server_url = st.text_input("Enter Tableau Server URL", value="https://prod-apnortheast-a.online.tableau.com")
+# Dropdown to select authentication method
+auth_method = st.selectbox("Select Authentication Method", ["Personal Access Token (PAT)", "Username/Password"])
+
+# Input fields for username/password or PAT
+if auth_method == "Personal Access Token (PAT)":
+    token_name = st.text_input("Enter your Tableau Personal Access Token Name")
+    token_value = st.text_input("Enter your Tableau Personal Access Token Value", type="password")
+    site_id = st.text_input("Enter your Tableau Site ID (Leave blank for default site)", value="")
+    server_url = st.text_input("Enter Tableau Server URL", value="https://prod-apnortheast-a.online.tableau.com")
+else:
+    username = st.text_input("Enter your Tableau Username")
+    password = st.text_input("Enter your Tableau Password", type="password")
+    site_id = st.text_input("Enter your Tableau Site ID (Leave blank for default site)", value="")
+    server_url = st.text_input("Enter Tableau Server URL", value="https://prod-apnortheast-a.online.tableau.com")
 
 # Dropdown to switch between create project, content info, publish workbook, and create group
 option = st.selectbox("Select an option:", ["Content Info", "Create Project", "Publish Workbook", "Create Group"])
+
+# Function to sign in based on selected authentication method
+def sign_in():
+    try:
+        if auth_method == "Personal Access Token (PAT)":
+            tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site_id)
+        else:
+            tableau_auth = TSC.TableauAuth(username, password, site_id=site_id)
+        server = TSC.Server(server_url, use_server_version=True)
+        server.auth.sign_in(tableau_auth)
+        return server
+    except Exception as e:
+        st.error(f"An error occurred while connecting to Tableau: {e}")
+        return None
 
 # If the user selects "Content Info"
 if option == "Content Info":
     # Button to trigger the connection
     if st.button("Connect to Tableau"):
-        if token_name and token_value and server_url:
-            try:
-                # Tableau authentication using Personal Access Token (PAT)
-                tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site_id)
-                server = TSC.Server(server_url, use_server_version=True)
-
-                # Connect to Tableau Server/Online
-                with server.auth.sign_in(tableau_auth):
+        if (auth_method == "Personal Access Token (PAT)" and token_name and token_value and server_url) or \
+           (auth_method == "Username/Password" and username and password and server_url):
+            server = sign_in()
+            if server:
+                try:
                     # Get the list of users
                     all_users, pagination_item = server.users.get()
 
@@ -88,9 +107,8 @@ if option == "Content Info":
                             file_name="tableau_data.csv",
                             mime="text/csv"
                         )
-
-            except Exception as e:
-                st.error(f"An error occurred while connecting to Tableau: {e}")
+                except Exception as e:
+                    st.error(f"An error occurred while retrieving data from Tableau: {e}")
         else:
             st.error("Please provide all the necessary credentials.")
 
@@ -103,12 +121,9 @@ elif option == "Create Project":
     # Button to create the project
     if st.button("Create Project"):
         if project_name and project_description:
-            try:
-                # Tableau authentication using Personal Access Token (PAT)
-                tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site_id)
-                server = TSC.Server(server_url, use_server_version=True)
-                
-                with server.auth.sign_in(tableau_auth):
+            server = sign_in()
+            if server:
+                try:
                     # Create a new project on Tableau Server
                     top_level_project = TSC.ProjectItem(
                         name=project_name,
@@ -121,8 +136,8 @@ elif option == "Create Project":
                     created_project = server.projects.create(top_level_project)
                     st.success(f"Project '{created_project.name}' created successfully!")
 
-            except Exception as e:
-                st.error(f"An error occurred while creating the project: {e}")
+                except Exception as e:
+                    st.error(f"An error occurred while creating the project: {e}")
         else:
             st.error("Please provide both project name and description.")
 
@@ -137,12 +152,9 @@ elif option == "Publish Workbook":
     # Button to publish the workbook
     if st.button("Publish Workbook"):
         if uploaded_file and project_name:
-            try:
-                # Tableau authentication using Personal Access Token (PAT)
-                tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site_id)
-                server = TSC.Server(server_url, use_server_version=True)
-                
-                with server.auth.sign_in(tableau_auth):
+            server = sign_in()
+            if server:
+                try:
                     # Retrieve project ID by name
                     req_options = TSC.RequestOptions()
                     req_options.filter.add(
@@ -187,8 +199,8 @@ elif option == "Publish Workbook":
                     )
 
                     st.success(f"Workbook '{new_workbook.name}' published successfully!")
-            except Exception as e:
-                st.error(f"An error occurred while publishing the workbook: {e}")
+                except Exception as e:
+                    st.error(f"An error occurred while publishing the workbook: {e}")
         else:
             st.error("Please provide the uploaded file and project name.")
 
@@ -203,12 +215,9 @@ elif option == "Create Group":
     # Button to create the group
     if st.button("Create Group"):
         if group_name:
-            try:
-                # Tableau authentication using Personal Access Token (PAT)
-                tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site_id)
-                server = TSC.Server(server_url, use_server_version=True)
-                
-                with server.auth.sign_in(tableau_auth):
+            server = sign_in()
+            if server:
+                try:
                     # Create a new group
                     group = TSC.GroupItem(group_name)
                     try:
@@ -242,7 +251,7 @@ elif option == "Create Group":
                                     raise serverError
 
                     st.success(f"Group '{group_name}' created successfully!")
-            except Exception as e:
-                st.error(f"An error occurred while creating the group: {e}")
+                except Exception as e:
+                    st.error(f"An error occurred while creating the group: {e}")
         else:
             st.error("Please provide a group name.")
