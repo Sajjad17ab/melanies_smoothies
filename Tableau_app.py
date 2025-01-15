@@ -257,11 +257,11 @@ elif option == "Refresh Data Source/Workbook":
 
                 with server.auth.sign_in(tableau_auth):
                     if refresh_option == "Workbook":
-                        resource = get_workbook_by_name(server, resource_name)
+                        resource = get_workbook_by_name(server,name)
                     elif refresh_option == "Datasource":
-                        resource = get_datasource_by_name(server, resource_name)
+                        resource = get_datasource_by_name(server,name)
                     
-                    schedule = get_schedule_by_name(server, schedule_name)
+                    schedule = get_schedule_by_name(server,name)
                     
                     assign_to_schedule(server, resource, schedule)
 
