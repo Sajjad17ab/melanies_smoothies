@@ -18,34 +18,6 @@ def get_workbook_by_name(server, workbook_name):
             return workbook
     return None
 
-# Function to get datasource by name
-def get_datasource_by_name(server, datasource_name):
-    datasources, pagination_item = server.datasources.get()
-    for datasource in datasources:
-        if datasource.name == datasource_name:
-            return datasource
-    return None
-
-# Function to get schedule by name
-def get_schedule_by_name(server, schedule_name):
-    schedules, pagination_item = server.schedules.get()
-    for schedule in schedules:
-        if schedule.name == schedule_name:
-            return schedule
-    return None
-
-# Function to assign resource to schedule
-def assign_to_schedule(server, resource, schedule):
-    try:
-        if isinstance(resource, TSC.WorkbookItem):
-            server.workbooks.update(resource)
-            server.workbooks.add_schedule(resource, schedule)
-        elif isinstance(resource, TSC.DatasourceItem):
-            server.datasources.update(resource)
-            server.datasources.add_schedule(resource, schedule)
-    except Exception as e:
-        raise Exception(f"Error assigning resource to schedule: {e}")
-
 # Streamlit UI for user credentials input
 st.title("Tableau Automation with Personal Access Token (PAT)")
 
@@ -247,14 +219,14 @@ elif option == "Create Group":
 
 # If the user selects "Refresh Data Source/Workbook"
 elif st.button("Refresh Data Source/Workbook"):
-    if resource_name and schedule_name:
+    if resource_name and schedule_name and refresh_option:
         try:
             tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site_id)
             server = TSC.Server(server_url, use_server_version=True)
 
             with server.auth.sign_in(tableau_auth):
                 st.success("Successfully authenticated to Tableau Server!")
-                
+
                 # Identify the resource (Workbook or Datasource)
                 if refresh_option == "Workbook":
                     resource = get_workbook_by_name(server, resource_name)
@@ -265,7 +237,7 @@ elif st.button("Refresh Data Source/Workbook"):
                 if not resource:
                     st.error(f"{refresh_option} '{resource_name}' not found.")
                     return
-                
+
                 # Retrieve the schedule
                 schedule = get_schedule_by_name(server, schedule_name)
                 
@@ -273,7 +245,7 @@ elif st.button("Refresh Data Source/Workbook"):
                 if not schedule:
                     st.error(f"Schedule '{schedule_name}' not found.")
                     return
-                
+
                 # Assign the resource to the schedule
                 assign_to_schedule(server, resource, schedule)
 
@@ -281,4 +253,4 @@ elif st.button("Refresh Data Source/Workbook"):
         except Exception as e:
             st.error(f"An error occurred while refreshing the {refresh_option}: {e}")
     else:
-        st.error("Please provide the resource name and schedule name.")
+        st.error("Please provide the resource name, schedule name, and select a refresh option.")
