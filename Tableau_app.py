@@ -10,39 +10,41 @@ from datetime import time
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
 
-# Helper Functions
-def make_filter(**kwargs):
-    """Helper function to create a filter for the API requests."""
-    options = TSC.RequestOptions()
-    for item, value in kwargs.items():
-        name = getattr(TSC.RequestOptions.Field, item)
-        options.filter.add(TSC.Filter(name, TSC.RequestOptions.Operator.Equals, value))
-    return options
+# Function to get workbook by name
+def get_workbook_by_name(server, workbook_name):
+    workbooks, pagination_item = server.workbooks.get()
+    for workbook in workbooks:
+        if workbook.name == workbook_name:
+            return workbook
+    return None
 
-def get_workbook_by_name(server, name):
-    """Fetches a workbook by its name."""
-    request_filter = make_filter(Name=name)
-    workbooks, _ = server.workbooks.get(request_filter)
-    assert len(workbooks) == 1, f"Workbook {name} not found or multiple workbooks found."
-    return workbooks.pop()
+# Function to get datasource by name
+def get_datasource_by_name(server, datasource_name):
+    datasources, pagination_item = server.datasources.get()
+    for datasource in datasources:
+        if datasource.name == datasource_name:
+            return datasource
+    return None
 
-def get_datasource_by_name(server, name):
-    """Fetches a datasource by its name."""
-    request_filter = make_filter(Name=name)
-    datasources, _ = server.datasources.get(request_filter)
-    assert len(datasources) == 1, f"Datasource {name} not found or multiple datasources found."
-    return datasources.pop()
+# Function to get schedule by name
+def get_schedule_by_name(server, schedule_name):
+    schedules, pagination_item = server.schedules.get()
+    for schedule in schedules:
+        if schedule.name == schedule_name:
+            return schedule
+    return None
 
-def get_schedule_by_name(server, name):
-    """Fetches a schedule by its name."""
-    schedules = [x for x in TSC.Pager(server.schedules) if x.name == name]
-    assert len(schedules) == 1, f"Schedule {name} not found or multiple schedules found."
-    return schedules.pop()
-
-def assign_to_schedule(server, workbook_or_datasource, schedule):
-    """Assign a workbook or datasource to a schedule."""
-    server.schedules.add_to_schedule(schedule.id, workbook_or_datasource)
-
+# Function to assign resource to schedule
+def assign_to_schedule(server, resource, schedule):
+    try:
+        if isinstance(resource, TSC.WorkbookItem):
+            server.workbooks.update(resource)
+            server.workbooks.add_schedule(resource, schedule)
+        elif isinstance(resource, TSC.DatasourceItem):
+            server.datasources.update(resource)
+            server.datasources.add_schedule(resource, schedule)
+    except Exception as e:
+        raise Exception(f"Error assigning resource to schedule: {e}")
 
 # Streamlit UI for user credentials input
 st.title("Tableau Automation with Personal Access Token (PAT)")
@@ -244,29 +246,39 @@ elif option == "Create Group":
             st.error("Please provide a group name.")
 
 # If the user selects "Refresh Data Source/Workbook"
-elif option == "Refresh Data Source/Workbook":
-    refresh_option = st.selectbox("Choose which type to refresh", ["Workbook", "Datasource"])
-    resource_name = st.text_input(f"Enter the {refresh_option} name to refresh")
-    schedule_name = st.text_input("Enter the schedule name to apply")
+elif st.button("Refresh Data Source/Workbook"):
+    if resource_name and schedule_name:
+        try:
+            tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site_id)
+            server = TSC.Server(server_url, use_server_version=True)
 
-    if st.button("Refresh Data Source/Workbook"):
-        if resource_name and schedule_name:
-            try:
-                tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site_id)
-                server = TSC.Server(server_url, use_server_version=True)
+            with server.auth.sign_in(tableau_auth):
+                st.success("Successfully authenticated to Tableau Server!")
+                
+                # Identify the resource (Workbook or Datasource)
+                if refresh_option == "Workbook":
+                    resource = get_workbook_by_name(server, resource_name)
+                elif refresh_option == "Datasource":
+                    resource = get_datasource_by_name(server, resource_name)
+                
+                # Ensure the resource is found
+                if not resource:
+                    st.error(f"{refresh_option} '{resource_name}' not found.")
+                    return
+                
+                # Retrieve the schedule
+                schedule = get_schedule_by_name(server, schedule_name)
+                
+                # Ensure the schedule is found
+                if not schedule:
+                    st.error(f"Schedule '{schedule_name}' not found.")
+                    return
+                
+                # Assign the resource to the schedule
+                assign_to_schedule(server, resource, schedule)
 
-                with server.auth.sign_in(tableau_auth):
-                    if refresh_option == "Workbook":
-                        resource = get_workbook_by_name(server,name)
-                    elif refresh_option == "Datasource":
-                        resource = get_datasource_by_name(server,name)
-                    
-                    schedule = get_schedule_by_name(server,name)
-                    
-                    assign_to_schedule(server, resource, schedule)
-
-                    st.success(f"{refresh_option} '{resource_name}' has been assigned to the '{schedule_name}' schedule.")
-            except Exception as e:
-                st.error(f"An error occurred while refreshing the {refresh_option}: {e}")
-        else:
-            st.error("Please provide the resource name and schedule name.")
+                st.success(f"{refresh_option} '{resource_name}' has been assigned to the '{schedule_name}' schedule.")
+        except Exception as e:
+            st.error(f"An error occurred while refreshing the {refresh_option}: {e}")
+    else:
+        st.error("Please provide the resource name and schedule name.")
