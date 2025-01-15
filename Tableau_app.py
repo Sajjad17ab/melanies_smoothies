@@ -12,22 +12,22 @@ logger = logging.getLogger()
 # Streamlit UI for user credentials input
 st.title("Tableau Login with Personal Access Token (PAT) or Username/Password")
 
-# Choose Authentication method (PAT or Username/Password)
-auth_method = st.radio("Select Authentication Method", ["Personal Access Token (PAT)", "Username/Password"])
+# # Choose Authentication method (PAT or Username/Password)
+# auth_method = st.radio("Select Authentication Method", ["Personal Access Token (PAT)", "Username/Password"])
 
-if auth_method == "Personal Access Token (PAT)":
+auth_method == "Personal Access Token (PAT)":
     # Credentials for Personal Access Token (PAT)
     token_name = st.text_input("Enter your Tableau Personal Access Token Name (if using PAT)")
     token_value = st.text_input("Enter your Tableau Personal Access Token Value (if using PAT)", type="password")
     site_id = st.text_input("Enter your Tableau Site ID (Leave blank for default site)", value="")
     server_url = st.text_input("Enter Tableau Server URL", value="https://prod-apnortheast-a.online.tableau.com")
 
-elif auth_method =="Username/Password":
-    # Credentials for Username/Password Authentication
-    username = st.text_input("Enter your Tableau Username (if using Username/Password)")
-    password = st.text_input("Enter your Tableau Password (if using Username/Password)", type="password")
-    site_id = st.text_input("Enter your Tableau Site ID (Leave blank for default site)", value="")
-    server_url = st.text_input("Enter Tableau Server URL", value="https://prod-apnortheast-a.online.tableau.com")
+# elif auth_method =="Username/Password":
+#     # Credentials for Username/Password Authentication
+#     username = st.text_input("Enter your Tableau Username (if using Username/Password)")
+#     password = st.text_input("Enter your Tableau Password (if using Username/Password)", type="password")
+#     site_id = st.text_input("Enter your Tableau Site ID (Leave blank for default site)", value="")
+#     server_url = st.text_input("Enter Tableau Server URL", value="https://prod-apnortheast-a.online.tableau.com")
 
 # Dropdown to switch between create project, content info, publish workbook, and create group
 option = st.selectbox("Select an option:", ["Content Info", "Create Project", "Publish Workbook", "Create Group"])
