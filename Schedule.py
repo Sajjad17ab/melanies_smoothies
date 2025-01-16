@@ -57,11 +57,19 @@ def main():
     # Set up Streamlit UI
     st.title("Tableau Schedule Creator")
 
+    # Authentication method selection
+    auth_method = st.radio("Select Authentication Method", ["Personal Access Token (PAT)", "Username/Password"])
+
     # User inputs for Tableau authentication
     server_url = st.text_input("Tableau Server URL", value="https://prod-apnortheast-a.online.tableau.com")
     site_id = st.text_input("Tableau Site ID (Leave blank for default site)", value="")
-    token_name = st.text_input("Tableau Personal Access Token Name")
-    token_value = st.text_input("Tableau Personal Access Token Value", type="password")
+
+    if auth_method == "Personal Access Token (PAT)":
+        token_name = st.text_input("Tableau Personal Access Token Name")
+        token_value = st.text_input("Tableau Personal Access Token Value", type="password")
+    else:  # Username/Password method
+        username = st.text_input("Tableau Username")
+        password = st.text_input("Tableau Password", type="password")
 
     # Choose schedule type
     schedule_type = st.selectbox("Select Schedule Type", ["Hourly", "Daily", "Weekly", "Monthly"])
@@ -80,15 +88,27 @@ def main():
 
     # Button to create schedule
     if st.button("Create Schedule"):
-        if server_url and token_name and token_value:
-            tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site_id)
-            server = TSC.Server(server_url, use_server_version=False)
-            server.add_http_options({"verify": False})
-            server.use_server_version()
-            with server.auth.sign_in(tableau_auth):
-                create_schedule(server, tableau_auth, schedule_type, interval_value, start_time, end_time, days)
+        if server_url and site_id:
+            # Authentication
+            try:
+                if auth_method == "Personal Access Token (PAT)" and token_name and token_value:
+                    tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site_id)
+                elif auth_method == "Username/Password" and username and password:
+                    tableau_auth = TSC.TableauAuth(username, password, site=site_id)
+                else:
+                    raise ValueError("Please provide the required authentication credentials.")
+                
+                # Connect to Tableau Server
+                server = TSC.Server(server_url, use_server_version=False)
+                server.add_http_options({"verify": False})
+                server.use_server_version()
+
+                with server.auth.sign_in(tableau_auth):
+                    create_schedule(server, tableau_auth, schedule_type, interval_value, start_time, end_time, days)
+            except Exception as e:
+                st.error(f"Authentication error: {str(e)}")
         else:
-            st.error("Please provide all required Tableau credentials (Server URL, Token Name, Token Value).")
+            st.error("Please provide all required Tableau credentials (Server URL, Site ID, and Authentication details).")
 
 
 if __name__ == "__main__":
