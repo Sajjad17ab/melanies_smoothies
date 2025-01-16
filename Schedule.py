@@ -94,7 +94,7 @@ def main():
                 if auth_method == "Personal Access Token (PAT)" and token_name and token_value:
                     tableau_auth = TSC.PersonalAccessTokenAuth(token_name, token_value, site_id=site_id)
                 elif auth_method == "Username/Password" and username and password:
-                    tableau_auth = TSC.TableauAuth(username, password, site=site_id)
+                    tableau_auth = TSC.TableauAuth(username, password, site_id=site_id)  # Fix: Use site_id here
                 else:
                     raise ValueError("Please provide the required authentication credentials.")
                 
