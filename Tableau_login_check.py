@@ -9,7 +9,7 @@ from tableauserverclient import ServerResponseError
 
 
 # Streamlit UI for user credentials input
-st.title("Tableau Login with Personal Access Token (PAT)")
+st.title("Tableau Admin Task Automation : Login with Personal Access Token (PAT)")
 
 # Get Tableau credentials from the user (PAT)
 token_name = st.text_input("Enter your Tableau Personal Access Token Name")
