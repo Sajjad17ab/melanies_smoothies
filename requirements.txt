@@ -7,3 +7,4 @@ tableauserverclient == 0.35
 tableau-api-lib
 openpyxl==3.0.10
 xlsxwriter
+openpyxl
