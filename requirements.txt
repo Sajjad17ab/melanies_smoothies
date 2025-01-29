@@ -2,7 +2,7 @@
 snowflake-snowpark-python
 streamlit
 requests
-pandas
+pandas == 3.1.0
 tableauserverclient == 0.35
 tableau-api-lib
 openpyxl==3.0.10
